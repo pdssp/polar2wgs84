@@ -1,0 +1,8 @@
+# Ignore everything
+*
+
+# Allow files and directories
+!/polar2wgs84/
+!/Makefile
+!/pyproject.toml
+!/README.rst

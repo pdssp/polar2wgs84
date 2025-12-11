@@ -1,0 +1,11 @@
+/* Agrandit le logo dans la barre latérale */
+.md-sidebar--primary .md-logo {
+    width: 100px;  /* Largeur personnalisée */
+    height: auto;  /* Hauteur automatique pour conserver les proportions */
+}
+
+/* Agrandit le logo dans l'en-tête (si utilisé) */
+.md-header .md-logo {
+    width: 150px;
+    height: auto;
+}
