@@ -196,6 +196,7 @@ sync_to_github:
   script:
     - git config --global user.email "jean-christophe.malapert@cnes.fr"
     - git config --global user.name "Jean-Christophe Malapert"
+    - git config --global http.sslCAInfo "${CNES_CERTIFICATE}"
     - git remote add github https://${GITHUB_TOKEN}@github.com/pdssp/polar2wgs84
     - git fetch github
     - git push github HEAD:main
