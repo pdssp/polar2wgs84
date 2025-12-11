@@ -152,7 +152,7 @@ tests:
 
 coverage:
 	uv run coverage erase
-	uv run coverage run -m pytest
+	uv run coverage run -m pytest -m "not manual" -s
 	uv run coverage report -m
 
 coverage_xml:
