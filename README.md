@@ -2,7 +2,11 @@
 
 [![image](https://img.shields.io/badge/Maintained%3F-yes-green.svg)]()
 
-![image]()
+[![Quality gate](https://sonarqube.cnes.fr/api/project_badges/quality_gate?project=CNES.UL%3Apdssp%3Apolar2wgs84&token=sqb_daa1ae20d805694245113eccad26aa053aba0877)](https://sonarqube.cnes.fr/dashboard?id=CNES.UL%3Apdssp%3Apolar2wgs84)
+
+[![Coverage](https://sonarqube.cnes.fr/api/project_badges/measure?project=CNES.UL%3Apdssp%3Apolar2wgs84&metric=coverage&token=sqb_daa1ae20d805694245113eccad26aa053aba0877)](https://sonarqube.cnes.fr/dashboard?id=CNES.UL%3Apdssp%3Apolar2wgs84)
+
+[![Lines of Code](https://sonarqube.cnes.fr/api/project_badges/measure?project=CNES.UL%3Apdssp%3Apolar2wgs84&metric=ncloc&token=sqb_daa1ae20d805694245113eccad26aa053aba0877)](https://sonarqube.cnes.fr/dashboard?id=CNES.UL%3Apdssp%3Apolar2wgs84)
 
 polar2wgs84 is a Python tool to seamlessly convert geographic footprints between polar stereographic projections (EPSG:3031/EPSG:3575) and WGS84 (EPSG:4326), handling pole-crossing geometries, densification, and validation for accurate GIS workflows.
 
