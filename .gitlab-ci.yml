@@ -199,6 +199,6 @@ sync_to_github:
     - git config --global http.sslCAInfo "${CNES_CERTIFICATE}"
     - git remote add github https://${GITHUB_TOKEN}@github.com/pdssp/polar2wgs84
     - git fetch github
-    - git push github HEAD:main
+    - git push github HEAD:refs/heads/main
   only:
     - main  # Exécute uniquement pour les modifications sur la branche "main"
