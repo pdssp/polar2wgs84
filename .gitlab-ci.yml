@@ -89,7 +89,7 @@ stages:
   - doc       # Stage to build the documentation
   - package   # Stage to build package
   - deploy    # Stage to deploy package
-#  - sync      # Stage to sync to github
+  - sync      # Stage to sync to github
 
 # Job to build and publish documentation as GitLab Pages
 pages:
@@ -175,15 +175,15 @@ publish-artifactory:
     # 📦 Publication du build-info dans Artifactory
     - ./jfrog rt bp --server-id=${UUID} ${PROJET_SLUG} ${CI_PIPELINE_IID} --build-url="${CI_PIPELINE_URL}"
 
-#sync_to_github:
-#  stage: sync
-#  image: ${CI_TEMPLATE_REGISTRY_HOST}/${TAG_DOCKER_IMAGE_PYTHON}
-#  script:
-#    - git config --global user.email "jean-christophe.malapert@cnes.fr"
-#    - git config --global user.name "Jean-Christophe Malapert"
-#    - git config --global http.sslCAInfo "${CNES_CERTIFICATE}"
-#    - git remote add github https://${GITHUB_TOKEN}@github.com/pdssp/polar2wgs84
-#    - git fetch github
-#    - git push github "HEAD:refs/heads/main"
-#  only:
-#    - main  # Exécute uniquement pour les modifications sur la branche "main"
+sync_to_github:
+  stage: sync
+  image: ${CI_TEMPLATE_REGISTRY_HOST}/${TAG_DOCKER_IMAGE_PYTHON}
+  script:
+    - git config --global user.email "jean-christophe.malapert@cnes.fr"
+    - git config --global user.name "Jean-Christophe Malapert"
+    - git config --global http.sslCAInfo "${CNES_CERTIFICATE}"
+    - git remote add github https://${GITHUB_TOKEN}@github.com/pdssp/polar2wgs84
+    - git fetch github
+    - git push github "HEAD:refs/heads/main"
+  only:
+    - main  # Exécute uniquement pour les modifications sur la branche "main"
