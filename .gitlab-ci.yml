@@ -175,21 +175,6 @@ publish-artifactory:
     # 📦 Publication du build-info dans Artifactory
     - ./jfrog rt bp --server-id=${UUID} ${PROJET_SLUG} ${CI_PIPELINE_IID} --build-url="${CI_PIPELINE_URL}"
 
-# scan-xray:
-#   stage: scan Xray
-#   image: ${CI_TEMPLATE_REGISTRY_HOST}/${TAG_DOCKER_IMAGE_PYTHON}
-#   before_script:
-#     # Accès a jfrog cli (installé dans le job build-maven) mais il faut refaire un chmod
-#     - chmod 755 jfrog
-#     # Obtention de UUID pour récupérer la config de jfrog cli
-#     - export UUID=`cat uuid.txt`
-#   script:
-#     - echo "$JFROG_CLI_BUILD_NAME"
-#     - echo "$JFROG_CLI_BUILD_NUMBER"
-#     - echo "$UUID"
-#     - ./jfrog build-scan --server-id="${UUID}" --fail=false "pdssp/my_project_test" "${JFROG_CLI_BUILD_NUMBER}"
-#   allow_failure: true
-
 sync_to_github:
   stage: sync
   image: ${CI_TEMPLATE_REGISTRY_HOST}/${TAG_DOCKER_IMAGE_PYTHON}
