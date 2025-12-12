@@ -57,7 +57,7 @@ include:
 # Default configuration for all jobs in this pipeline
 default:
   tags:
-    - Usine_Logicielle_Podman # Specifies the GitLab Runner tag to use for job execution
+    - Usine_Logicielle # Specifies the GitLab Runner tag to use for job execution
 
 # Base job template for all Python-related jobs
 .python-job:
