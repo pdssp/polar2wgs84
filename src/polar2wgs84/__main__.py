@@ -117,99 +117,99 @@ def parse_cli() -> argparse.Namespace:
 
 def run():
     """Main function that instanciates the library."""
-    handler = SigintHandler()
-    signal.signal(signal.SIGINT, handler.signal_handler)
-    try:
-        display_mode = "lines"
-        options_cli = parse_cli()
-        logger.add(sys.stderr, level=options_cli.level)
-        src_crs = "EPSG:4326"
-        if options_cli.crs == "SOUTH_STEREO":
-            src_crs = "EPSG:3031"
-        elif options_cli.crs == "NORTH_STEREO":
-            src_crs = "EPSG:3575"
-        else:
-            src_crs = "EPSG:4326"
-        poly = ast.literal_eval(options_cli.geometry)
-        geometry = Polygon(poly)
-        processor = GeometryProcessor(src_crs, "EPSG:4326", geometry)
+    # handler = SigintHandler()
+    # signal.signal(signal.SIGINT, handler.signal_handler)
+    # try:
+    #     display_mode = "lines"
+    #     options_cli = parse_cli()
+    #     logger.add(sys.stderr, level=options_cli.level)
+    #     src_crs = "EPSG:4326"
+    #     if options_cli.crs == "SOUTH_STEREO":
+    #         src_crs = "EPSG:3031"
+    #     elif options_cli.crs == "NORTH_STEREO":
+    #         src_crs = "EPSG:3575"
+    #     else:
+    #         src_crs = "EPSG:4326"
+    #     poly = ast.literal_eval(options_cli.geometry)
+    #     geometry = Polygon(poly)
+    #     processor = GeometryProcessor(src_crs, "EPSG:4326", geometry)
 
-        # Processing pipeline
-        poly_dense = processor.densify_geometry(max_distance=50000)
-        poly_reproj = processor.reproject_geometry(poly_dense)
-        poly_final = GeometryProcessor.simplify_geometry(poly_reproj, tolerance=1)
-        poly_back = processor.reproject_geometry(poly_final, reverse=True)
+    #     # Processing pipeline
+    #     poly_dense = processor.densify_geometry(max_distance=50000)
+    #     poly_reproj = processor.reproject_geometry(poly_dense)
+    #     poly_final = GeometryProcessor.simplify_geometry(poly_reproj, tolerance=1)
+    #     poly_back = processor.reproject_geometry(poly_final, reverse=True)
 
-        # Check all polygons
-        print("\n--- Checking initial polygon ---")
-        check_polygon(geometry)
-        print("\n--- Checking reprojected polygon ---")
-        check_polygon(poly_final)
-        print("\n--- Checking back-projected polar polygon ---")
-        check_polygon(poly_back)
+    #     # Check all polygons
+    #     print("\n--- Checking initial polygon ---")
+    #     check_polygon(geometry)
+    #     print("\n--- Checking reprojected polygon ---")
+    #     check_polygon(poly_final)
+    #     print("\n--- Checking back-projected polar polygon ---")
+    #     check_polygon(poly_back)
 
-        # Visualization
-        source_crs_cartopy = ccrs.SouthPolarStereo()
-        target_crs_cartopy = ccrs.PlateCarree()
-        fig = plt.figure(figsize=(21, 7))
+    #     # Visualization
+    #     source_crs_cartopy = ccrs.SouthPolarStereo()
+    #     target_crs_cartopy = ccrs.PlateCarree()
+    #     fig = plt.figure(figsize=(21, 7))
 
-        ax1 = fig.add_subplot(1, 3, 1, projection=source_crs_cartopy)
-        ax1.set_title(f"Original ({processor.src_crs})")
-        ax1.set_extent([-3000000, 3000000, -3000000, 3000000], crs=source_crs_cartopy)
-        gl1 = ax1.gridlines(
-            crs=ccrs.PlateCarree(),
-            draw_labels=True,
-            linewidth=0.5,
-            color="gray",
-            alpha=0.5,
-            linestyle="--",
-        )
-        gl1.top_labels = False
-        gl1.right_labels = False
-        GeometryVisualizer.draw_geometry(
-            ax1, processor.geom, source_crs_cartopy, mode=display_mode, edgecolor="blue"
-        )
+    #     ax1 = fig.add_subplot(1, 3, 1, projection=source_crs_cartopy)
+    #     ax1.set_title(f"Original ({processor.src_crs})")
+    #     ax1.set_extent([-3000000, 3000000, -3000000, 3000000], crs=source_crs_cartopy)
+    #     gl1 = ax1.gridlines(
+    #         crs=ccrs.PlateCarree(),
+    #         draw_labels=True,
+    #         linewidth=0.5,
+    #         color="gray",
+    #         alpha=0.5,
+    #         linestyle="--",
+    #     )
+    #     gl1.top_labels = False
+    #     gl1.right_labels = False
+    #     GeometryVisualizer.draw_geometry(
+    #         ax1, processor.geom, source_crs_cartopy, mode=display_mode, edgecolor="blue"
+    #     )
 
-        ax2 = fig.add_subplot(1, 3, 2, projection=target_crs_cartopy)
-        ax2.set_title("Reprojected (EPSG:4326)")
-        ax2.set_extent([-180, 180, -90, 90], crs=target_crs_cartopy)
-        gl2 = ax2.gridlines(
-            crs=ccrs.PlateCarree(),
-            draw_labels=True,
-            linewidth=0.5,
-            color="gray",
-            alpha=0.5,
-            linestyle="--",
-        )
-        gl2.top_labels = True
-        gl2.right_labels = True
-        GeometryVisualizer.draw_geometry(
-            ax2, poly_final, target_crs_cartopy, mode=display_mode, edgecolor="red"
-        )
+    #     ax2 = fig.add_subplot(1, 3, 2, projection=target_crs_cartopy)
+    #     ax2.set_title("Reprojected (EPSG:4326)")
+    #     ax2.set_extent([-180, 180, -90, 90], crs=target_crs_cartopy)
+    #     gl2 = ax2.gridlines(
+    #         crs=ccrs.PlateCarree(),
+    #         draw_labels=True,
+    #         linewidth=0.5,
+    #         color="gray",
+    #         alpha=0.5,
+    #         linestyle="--",
+    #     )
+    #     gl2.top_labels = True
+    #     gl2.right_labels = True
+    #     GeometryVisualizer.draw_geometry(
+    #         ax2, poly_final, target_crs_cartopy, mode=display_mode, edgecolor="red"
+    #     )
 
-        ax3 = fig.add_subplot(1, 3, 3, projection=source_crs_cartopy)
-        ax3.set_title("Back to polar")
-        ax3.set_extent([-3000000, 3000000, -3000000, 3000000], crs=source_crs_cartopy)
-        gl3 = ax3.gridlines(
-            crs=ccrs.PlateCarree(),
-            draw_labels=True,
-            linewidth=0.5,
-            color="gray",
-            alpha=0.5,
-            linestyle="--",
-        )
-        gl3.top_labels = False
-        gl3.right_labels = False
-        GeometryVisualizer.draw_geometry(
-            ax3, poly_back, source_crs_cartopy, mode=display_mode, edgecolor="green"
-        )
+    #     ax3 = fig.add_subplot(1, 3, 3, projection=source_crs_cartopy)
+    #     ax3.set_title("Back to polar")
+    #     ax3.set_extent([-3000000, 3000000, -3000000, 3000000], crs=source_crs_cartopy)
+    #     gl3 = ax3.gridlines(
+    #         crs=ccrs.PlateCarree(),
+    #         draw_labels=True,
+    #         linewidth=0.5,
+    #         color="gray",
+    #         alpha=0.5,
+    #         linestyle="--",
+    #     )
+    #     gl3.top_labels = False
+    #     gl3.right_labels = False
+    #     GeometryVisualizer.draw_geometry(
+    #         ax3, poly_back, source_crs_cartopy, mode=display_mode, edgecolor="green"
+    #     )
 
-        plt.tight_layout()
-        plt.show()
-        sys.exit(0)
-    except Exception as error:  # pylint: disable=broad-except
-        logger.exception(error)
-        sys.exit(1)
+    #     plt.tight_layout()
+    #     plt.show()
+    #     sys.exit(0)
+    # except Exception as error:  # pylint: disable=broad-except
+    #     logger.exception(error)
+    #     sys.exit(1)
 
 
 if __name__ == "__main__":

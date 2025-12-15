@@ -1,54 +1,77 @@
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import pytest
-from polar2wgs84.projection import check_polygon
-from polar2wgs84.projection import GeometryProcessor
-from polar2wgs84.projection import GeometryVisualizer
+from polar2wgs84.footprint import check_polygon
+from polar2wgs84.footprint import Footprint
+from polar2wgs84.projection import Projection
+from polar2wgs84.visu import GeometryVisualizer
 from shapely.geometry import Polygon
 
 # Liste des géométries à tester, avec leurs paramètres associés
 test_geometries = [
     {
-        "name": "Antarctic Polygon with Pole",
+        "name": "On Antimeridian",
         "poly": Polygon(
             [
-                (-3000000, 0),
-                (-2000000, 500000),
-                (-1000000, 500000),
-                (0, 0),  # Pole on the line
-                (-3000000, 0),
+                (180, 60),  # Point de départ
+                (180, 70),  # Traverse l'antiméridien
+                (175, 70),  # Après l'antiméridien
+                (175, 60),
+                (180, 60),
             ]
         ),
-        "src_crs": "EPSG:3031",
+        "src_crs": "EPSG:4326",
         "dst_crs": "EPSG:4326",
         "max_distance": 50000,
-        "tolerance": 0.05,
+        "tolerance": 0.5,
         "display_mode": "lines",
         "extent_polar": [-3000000, 3000000, -3000000, 3000000],
         "extent_wgs84": [-180, 180, -90, 90],
     },
     {
-        "name": "Full Circle around North Pole",
+        "name": "Simple Antimeridian",
         "poly": Polygon(
             [
-                (3000000, 0),  # 0°
-                (2121320, 2121320),  # 30°
-                (0, 3000000),  # 90°
-                (-2121320, 2121320),  # 150°
-                (-3000000, 0),  # 180°
-                (-2121320, -2121320),  # 210°
-                (0, -3000000),  # 270°
-                (2121320, -2121320),  # 330°
-                (3000000, 0),
+                (170, 60),  # Point de départ
+                (179, 60),  # Traverse l'antiméridien
+                (-170, 60),  # Après l'antiméridien
+                (-160, 70),
+                (150, 80),
+                (170, 60),
             ]
         ),
-        "src_crs": "EPSG:3575",
+        "src_crs": "EPSG:4326",
         "dst_crs": "EPSG:4326",
         "max_distance": 50000,
-        "tolerance": 0.05,
+        "tolerance": 0.5,
         "display_mode": "lines",
         "extent_polar": [-3000000, 3000000, -3000000, 3000000],
-        "extent_wgs84": [-180, 180, 0, 90],  # Hémisphère Nord uniquement
+        "extent_wgs84": [-180, 180, -90, 90],
+    },
+    {
+        "name": "Antimeridian North Pole",
+        "poly": Polygon(
+            [
+                (170, 60),  # Point de départ
+                (180, 60),  # Traverse l'antiméridien
+                (-170, 60),  # Après l'antiméridien
+                (-160, 70),
+                (-150, 80),
+                (-140, 85),
+                (180, 89),  # Pôle Nord
+                (140, 85),
+                (150, 80),
+                (160, 70),
+                (170, 60),  # Retour au point de départ pour fermer le polygone
+            ]
+        ),
+        "src_crs": "EPSG:4326",
+        "dst_crs": "EPSG:4326",
+        "max_distance": 50000,
+        "tolerance": 0.5,
+        "display_mode": "lines",
+        "extent_polar": [-3000000, 3000000, -3000000, 3000000],
+        "extent_wgs84": [-180, 180, -90, 90],
     },
     {
         "name": "Small Arctic Polygon",
@@ -56,10 +79,10 @@ test_geometries = [
         "src_crs": "EPSG:4326",  # WGS84, mais sera détecté comme polaire
         "dst_crs": "EPSG:4326",
         "max_distance": 50000,
-        "tolerance": 0.05,
+        "tolerance": 0.5,
         "display_mode": "lines",
-        "extent_polar": [-3000000, 3000000, -3000000, 3000000],
-        "extent_wgs84": [-180, 180, 0, 90],
+        "extent_polar": [-30000000, 30000000, -3000000, 3000000],
+        "extent_wgs84": [-180, 180, -90, 90],
     },
     {
         "name": "Complex Antarctic Polygon",
@@ -80,10 +103,10 @@ test_geometries = [
         "src_crs": "EPSG:4326",
         "dst_crs": "EPSG:4326",
         "max_distance": 50000,
-        "tolerance": 0.05,
+        "tolerance": 0.5,
         "display_mode": "lines",
         "extent_polar": [-3000000, 3000000, -3000000, 3000000],
-        "extent_wgs84": [-180, 180, -90, 0],  # Hémisphère Sud uniquement
+        "extent_wgs84": [-180, 180, -90, 90],
     },
 ]
 
@@ -95,38 +118,41 @@ def test_manual_geometry_processing(geometry):
     print(f"\n=== Testing: {geometry['name']} ===")
 
     # Initialisation
-    processor = GeometryProcessor(
-        geometry["src_crs"], geometry["dst_crs"], geometry["poly"]
+    footprint = Footprint(
+        geometry["poly"],
+        tolerance=geometry["tolerance"],
+        max_distance=geometry["max_distance"],
+    )
+    geom_wgs84 = footprint.toWgs84()
+
+    projection = Projection()
+    geometry_projected = projection.reproject_geometry(
+        geometry["poly"], footprint.is_north
     )
 
-    # Pipeline de traitement
-    poly_dense = processor.densify_geometry(max_distance=geometry["max_distance"])
-    poly_reproj = processor.reproject_geometry(poly_dense)
-    poly_final = GeometryProcessor.simplify_geometry(
-        poly_reproj, tolerance=geometry["tolerance"]
-    )
-    poly_back = processor.reproject_geometry(poly_final, reverse=True)
+    geometry_back = projection.reproject_geometry(geom_wgs84, footprint.is_north)
 
     # Vérification des polygones
-    print("\n--- Checking initial polygon ---")
-    check_polygon(geometry["poly"])
-    print("\n--- Checking reprojected polygon ---")
-    check_polygon(poly_final)
+    print("\n--- Checking Polar polygon ---")
+    check_polygon(geometry_projected)
+    print("\n--- Checking WGS84 polygon ---")
+    check_polygon(geom_wgs84)
     print("\n--- Checking back-projected polar polygon ---")
-    check_polygon(poly_back)
+    check_polygon(geometry_back)
 
     # Visualisation
     source_crs_cartopy = (
-        ccrs.SouthPolarStereo()
-        if geometry["src_crs"] == "EPSG:3031"
-        else ccrs.NorthPolarStereo()
+        ccrs.NorthPolarStereo(central_longitude=180)
+        if footprint.is_north
+        else ccrs.SouthPolarStereo(central_longitude=180)
     )
     target_crs_cartopy = ccrs.PlateCarree()
     fig = plt.figure(figsize=(21, 7))
+    fig.suptitle(f"{geometry['name']}", fontsize=16, fontweight="bold")
 
     # Original
     ax1 = fig.add_subplot(1, 3, 1, projection=source_crs_cartopy)
-    ax1.set_title(f"Original ({processor.src_crs})")
+    ax1.set_title("Original")
     ax1.set_extent(geometry["extent_polar"], crs=source_crs_cartopy)
     gl1 = ax1.gridlines(
         crs=ccrs.PlateCarree(),
@@ -140,7 +166,7 @@ def test_manual_geometry_processing(geometry):
     gl1.right_labels = False
     GeometryVisualizer.draw_geometry(
         ax1,
-        processor.geom,
+        geometry_projected,
         source_crs_cartopy,
         mode=geometry["display_mode"],
         edgecolor="blue",
@@ -162,7 +188,7 @@ def test_manual_geometry_processing(geometry):
     gl2.right_labels = True
     GeometryVisualizer.draw_geometry(
         ax2,
-        poly_final,
+        geom_wgs84,
         target_crs_cartopy,
         mode=geometry["display_mode"],
         edgecolor="red",
@@ -184,7 +210,7 @@ def test_manual_geometry_processing(geometry):
     gl3.right_labels = False
     GeometryVisualizer.draw_geometry(
         ax3,
-        poly_back,
+        geometry_back,
         source_crs_cartopy,
         mode=geometry["display_mode"],
         edgecolor="green",
