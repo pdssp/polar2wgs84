@@ -81,4 +81,5 @@ dev = [
     "mypy>=1.19.0",
     "pylint>=4.0.4",
     "toml>=0.10.2",
+    "mkdocs-gallery==0.10.4",
 ]

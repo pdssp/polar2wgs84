@@ -131,5 +131,6 @@ dmypy.json
 .polar2wgs84
 
 docs/build/
+docs/generated/
 
 **/tests/msap_data/

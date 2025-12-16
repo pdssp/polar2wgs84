@@ -1138,6 +1138,21 @@ wheels = [
 ]
 
 [[package]]
+name = "mkdocs-gallery"
+version = "0.10.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mkdocs" },
+    { name = "mkdocs-material" },
+    { name = "packaging" },
+    { name = "tqdm" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/49/de/ceec460a00f47fc06676c9c2cbc9c95e12c9f85bafa9edbf5b309d392b3c/mkdocs_gallery-0.10.4.tar.gz", hash = "sha256:469f84a0c842ea87aa59e8679bd6237607f2a578788b50a50132abd9937d14d4", size = 423267, upload-time = "2024-09-30T08:31:06.435Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/00/b3/f6aa253503b3147238747672322503b2b529f390861f6184838d18abd51a/mkdocs_gallery-0.10.4-py2.py3-none-any.whl", hash = "sha256:8669d162b412714c52792f2959d4d211bf92bf5f820f5916c0686ff1ccd89806", size = 137833, upload-time = "2024-09-30T08:31:04.959Z" },
+]
+
+[[package]]
 name = "mkdocs-gen-files"
 version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1541,6 +1556,7 @@ dev = [
     { name = "flake8" },
     { name = "mccabe" },
     { name = "mkdocs" },
+    { name = "mkdocs-gallery" },
     { name = "mkdocs-gen-files" },
     { name = "mkdocs-literate-nav" },
     { name = "mkdocs-macros-plugin" },
@@ -1582,6 +1598,7 @@ dev = [
     { name = "flake8", specifier = ">=7.3.0" },
     { name = "mccabe", specifier = ">=0.7.0" },
     { name = "mkdocs", specifier = ">=1.6.1" },
+    { name = "mkdocs-gallery", specifier = "==0.10.4" },
     { name = "mkdocs-gen-files", specifier = ">=0.6.0" },
     { name = "mkdocs-literate-nav", specifier = ">=0.6.2" },
     { name = "mkdocs-macros-plugin", specifier = ">=1.5.0" },
@@ -2378,6 +2395,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/59/bf/0e4dbd42724cbae25959f0e34c95d0c730df03ab03f54d52accd9abfc614/tox-4.32.0.tar.gz", hash = "sha256:1ad476b5f4d3679455b89a992849ffc3367560bbc7e9495ee8a3963542e7c8ff", size = 203330, upload-time = "2025-10-24T18:03:38.132Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fc/cc/e09c0d663a004945f82beecd4f147053567910479314e8d01ba71e5d5dea/tox-4.32.0-py3-none-any.whl", hash = "sha256:451e81dc02ba8d1ed20efd52ee409641ae4b5d5830e008af10fe8823ef1bd551", size = 175905, upload-time = "2025-10-24T18:03:36.337Z" },
+]
+
+[[package]]
+name = "tqdm"
+version = "4.67.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama", marker = "sys_platform == 'win32'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a8/4b/29b4ef32e036bb34e4ab51796dd745cdba7ed47ad142a9f4a1eb8e0c744d/tqdm-4.67.1.tar.gz", hash = "sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2", size = 169737, upload-time = "2024-11-24T20:12:22.481Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d0/30/dc54f88dd4a2b5dc8a0279bdd7270e735851848b762aeb1c1184ed1f6b14/tqdm-4.67.1-py3-none-any.whl", hash = "sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2", size = 78540, upload-time = "2024-11-24T20:12:19.698Z" },
 ]
 
 [[package]]
