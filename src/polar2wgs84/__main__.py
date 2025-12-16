@@ -15,9 +15,11 @@ from polar2wgs84 import __author__
 from polar2wgs84 import __copyright__
 from polar2wgs84 import __description__
 from polar2wgs84 import __version__
-from polar2wgs84.projection import check_polygon
-from polar2wgs84.projection import GeometryProcessor
-from polar2wgs84.projection import GeometryVisualizer
+from polar2wgs84.densify_geometry import DensifyGeometryGeodesic
+from polar2wgs84.footprint import Footprint
+from polar2wgs84.projection import compute_centroid
+from polar2wgs84.projection import compute_nbpoints
+from polar2wgs84.visu import GeometryVisualizer
 from shapely.geometry import Polygon
 
 logger.remove()
@@ -88,10 +90,43 @@ def parse_cli() -> argparse.Namespace:
     )
 
     parser.add_argument(
-        "--crs",
-        choices=["PLATE_CARREE", "NORTH_STEREO", "SOUTH_STEREO"],
-        default="PLATE_CARREE",
-        help="set Level log (default: %(default)s)",
+        "--densify_polygon",
+        type=float,
+        required=False,
+        default=5,
+        help="Maximum distance between points in Km (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--radius_planet",
+        type=float,
+        required=False,
+        default=DensifyGeometryGeodesic.R_EARTH_KM,
+        help="Radius of the planet in Km (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--simplify_points",
+        type=int,
+        required=False,
+        default=20,
+        help="Maximum number of vertices (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--simplify_tolerance_start",
+        type=float,
+        required=False,
+        default=1000,
+        help="Initial simplification tolerance in meters (default: %(default)s)",
+    )
+
+    parser.add_argument(
+        "--simplify_tolerance_max",
+        type=float,
+        required=False,
+        default=50000,
+        help="Maximum allowed tolerance in meters (default: %(default)s)",
     )
 
     parser.add_argument(
@@ -117,99 +152,91 @@ def parse_cli() -> argparse.Namespace:
 
 def run():
     """Main function that instanciates the library."""
-    # handler = SigintHandler()
-    # signal.signal(signal.SIGINT, handler.signal_handler)
-    # try:
-    #     display_mode = "lines"
-    #     options_cli = parse_cli()
-    #     logger.add(sys.stderr, level=options_cli.level)
-    #     src_crs = "EPSG:4326"
-    #     if options_cli.crs == "SOUTH_STEREO":
-    #         src_crs = "EPSG:3031"
-    #     elif options_cli.crs == "NORTH_STEREO":
-    #         src_crs = "EPSG:3575"
-    #     else:
-    #         src_crs = "EPSG:4326"
-    #     poly = ast.literal_eval(options_cli.geometry)
-    #     geometry = Polygon(poly)
-    #     processor = GeometryProcessor(src_crs, "EPSG:4326", geometry)
+    handler = SigintHandler()
+    signal.signal(signal.SIGINT, handler.signal_handler)
+    try:
+        options_cli = parse_cli()
+        logger.add(sys.stderr, level=options_cli.level)
 
-    #     # Processing pipeline
-    #     poly_dense = processor.densify_geometry(max_distance=50000)
-    #     poly_reproj = processor.reproject_geometry(poly_dense)
-    #     poly_final = GeometryProcessor.simplify_geometry(poly_reproj, tolerance=1)
-    #     poly_back = processor.reproject_geometry(poly_final, reverse=True)
+        arguments = {}
+        if options_cli.densify_polygon:
+            arguments["max_step_km"] = options_cli.densify_polygon
+        if options_cli.radius_planet:
+            arguments["radius_planet"] = options_cli.radius_planet
+        if options_cli.simplify_points:
+            arguments["max_step_km"] = options_cli.simplify_points
+        if options_cli.simplify_tolerance_start:
+            arguments["tolerance_start"] = options_cli.simplify_tolerance_start
+        if options_cli.simplify_tolerance_max:
+            arguments["tolerance_max"] = options_cli.simplify_tolerance_max
 
-    #     # Check all polygons
-    #     print("\n--- Checking initial polygon ---")
-    #     check_polygon(geometry)
-    #     print("\n--- Checking reprojected polygon ---")
-    #     check_polygon(poly_final)
-    #     print("\n--- Checking back-projected polar polygon ---")
-    #     check_polygon(poly_back)
+        logger.info(f"Running with theses parameters: {arguments}")
 
-    #     # Visualization
-    #     source_crs_cartopy = ccrs.SouthPolarStereo()
-    #     target_crs_cartopy = ccrs.PlateCarree()
-    #     fig = plt.figure(figsize=(21, 7))
+        poly = ast.literal_eval(options_cli.geometry)
+        geometry = Polygon(poly)
 
-    #     ax1 = fig.add_subplot(1, 3, 1, projection=source_crs_cartopy)
-    #     ax1.set_title(f"Original ({processor.src_crs})")
-    #     ax1.set_extent([-3000000, 3000000, -3000000, 3000000], crs=source_crs_cartopy)
-    #     gl1 = ax1.gridlines(
-    #         crs=ccrs.PlateCarree(),
-    #         draw_labels=True,
-    #         linewidth=0.5,
-    #         color="gray",
-    #         alpha=0.5,
-    #         linestyle="--",
-    #     )
-    #     gl1.top_labels = False
-    #     gl1.right_labels = False
-    #     GeometryVisualizer.draw_geometry(
-    #         ax1, processor.geom, source_crs_cartopy, mode=display_mode, edgecolor="blue"
-    #     )
+        footprint = Footprint(geometry)
+        geometry_valid = footprint.make_valid_geojson_geometry()
+        geometry_valid_simplified = footprint.to_wgs84_plate_carre(
+            geometry_valid, **arguments
+        )
+        print(geometry_valid_simplified)
+        nb_points = compute_nbpoints(geometry_valid)
+        nb_points_geom_simplified = compute_nbpoints(geometry_valid_simplified)
 
-    #     ax2 = fig.add_subplot(1, 3, 2, projection=target_crs_cartopy)
-    #     ax2.set_title("Reprojected (EPSG:4326)")
-    #     ax2.set_extent([-180, 180, -90, 90], crs=target_crs_cartopy)
-    #     gl2 = ax2.gridlines(
-    #         crs=ccrs.PlateCarree(),
-    #         draw_labels=True,
-    #         linewidth=0.5,
-    #         color="gray",
-    #         alpha=0.5,
-    #         linestyle="--",
-    #     )
-    #     gl2.top_labels = True
-    #     gl2.right_labels = True
-    #     GeometryVisualizer.draw_geometry(
-    #         ax2, poly_final, target_crs_cartopy, mode=display_mode, edgecolor="red"
-    #     )
+        lon_mean, lat_mean = compute_centroid(geometry_valid)
 
-    #     ax3 = fig.add_subplot(1, 3, 3, projection=source_crs_cartopy)
-    #     ax3.set_title("Back to polar")
-    #     ax3.set_extent([-3000000, 3000000, -3000000, 3000000], crs=source_crs_cartopy)
-    #     gl3 = ax3.gridlines(
-    #         crs=ccrs.PlateCarree(),
-    #         draw_labels=True,
-    #         linewidth=0.5,
-    #         color="gray",
-    #         alpha=0.5,
-    #         linestyle="--",
-    #     )
-    #     gl3.top_labels = False
-    #     gl3.right_labels = False
-    #     GeometryVisualizer.draw_geometry(
-    #         ax3, poly_back, source_crs_cartopy, mode=display_mode, edgecolor="green"
-    #     )
+        proj = ccrs.Orthographic(central_longitude=lon_mean, central_latitude=lat_mean)
 
-    #     plt.tight_layout()
-    #     plt.show()
-    #     sys.exit(0)
-    # except Exception as error:  # pylint: disable=broad-except
-    #     logger.exception(error)
-    #     sys.exit(1)
+        fig = plt.figure(figsize=(21, 7))
+
+        fig.suptitle("", fontsize=16, fontweight="bold")
+        ax1 = fig.add_subplot(1, 4, 1, projection=proj)
+        GeometryVisualizer.draw_geometry(
+            ax1,
+            "original",
+            geometry,
+            ccrs.PlateCarree(),
+            mode="points",
+            edgecolor="blue",
+        )
+        ax2 = fig.add_subplot(1, 4, 2, projection=ccrs.PlateCarree())
+        GeometryVisualizer.draw_geometry(
+            ax2,
+            f"Projected ({nb_points}) points",
+            geometry_valid,
+            ccrs.PlateCarree(),
+            mode="lines",
+            edgecolor="blue",
+        )
+
+        # Original
+        ax3 = fig.add_subplot(1, 4, 3, projection=ccrs.PlateCarree())
+        GeometryVisualizer.draw_geometry(
+            ax3,
+            f"Densify & projected ({nb_points_geom_simplified} points)",
+            geometry_valid_simplified,
+            ccrs.PlateCarree(),
+            mode="lines",
+            edgecolor="blue",
+        )
+
+        ax4 = fig.add_subplot(1, 4, 4, projection=proj)
+        GeometryVisualizer.draw_geometry(
+            ax4,
+            f"Densify & projected ({nb_points_geom_simplified} points)",
+            geometry_valid_simplified,
+            ccrs.PlateCarree(),
+            mode="points",
+            edgecolor="blue",
+        )
+
+        plt.tight_layout()
+        plt.show()
+        sys.exit(0)
+    except Exception as error:  # pylint: disable=broad-except
+        logger.exception(error)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

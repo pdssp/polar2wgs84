@@ -1,76 +1,233 @@
+# Polar to WGS84 Converter - polar2wgs84 is a Python tool to seamlessly convert geographic footprints between polar stereographic projections (EPSG:3031/EPSG:3575) and WGS84 (EPSG:4326), handling pole-crossing geometries, densification, and validation for accurate GIS workflows.
+# Copyright (C) 2025 - Centre National d'Etudes Spatiales
+# This file is part of Polar to WGS84 Converter <https://gitlab.cnes.fr/pdssp/common/polar2wgs84>
+# SPDX-License-Identifier: Apache-2.0
+"""
+Module to handle polygons containing the North or South Pole.
+It provides classes to determine if a pole is inside a polygon,
+adjust geometries crossing the antimeridian, and produce valid GeoJSON-ready polygons.
+
+Classes
+-------
+Pole
+    Base class representing a pole and handling geometry adjustments.
+NorthPole
+    Represents a polygon containing the North Pole.
+SouthPole
+    Represents a polygon containing the South Pole.
+PoleFactory
+    Factory class to instantiate the correct pole class based on polygon location.
+"""
 import numpy as np
 from loguru import logger
-from polar2wgs84.angle_operation import shift_coords_to_minus_180
-from polar2wgs84.projection import limit_polygon_vertices
-from polar2wgs84.projection import Projection
-from polar2wgs84.projection import Stats
-from shapely import Point
-from shapely import Polygon
-from shapely import simplify
+from shapely.geometry import LineString
+from shapely.geometry import Point
+from shapely.geometry import Polygon
 from shapely.geometry.polygon import orient
+
+from .angle_operation import normalize_lon_to_360
+from .angle_operation import reorganize_longitudes
+from .projection import Projection
 
 
 class Pole:
+    """
+    Base class to represent a pole and handle polygons that include it.
+
+    Attributes
+    ----------
+    geometry : Polygon
+        Original polygon in WGS84 coordinates.
+    pole_latitude : float
+        Latitude of the pole (90 for North, -90 for South).
+    is_north : bool
+        True if this is the North Pole, False for South Pole.
+    is_pole_included : bool
+        True if the pole is contained within the polygon.
+    """
 
     POLE_NORTH_LATITUDE = 90
     POLE_SOUTH_LATITUDE = -90
 
-    def __init__(
-        self, geometry: Polygon, stats: Stats, tolerance=0.01, max_distance=5000
-    ):
+    def __init__(self, geometry: Polygon, pole_latitude: float):
+        """
+        Initialize a Pole object with its polygon and pole latitude.
+
+        Parameters
+        ----------
+        geometry : Polygon
+            Polygon potentially containing the pole.
+        pole_latitude : float
+            Latitude of the pole.
+        """
         self.geometry = geometry
-        self.stats = stats
-        self.tolerance = tolerance
-        self.max_distance = max_distance
-        self.projection = Projection()
-        self.is_north = (
-            True
-            if Projection.is_polar_projection_suitable(self.geometry) == "north"
-            else False
-        )
-        self.physical_pole = (
-            Pole.POLE_NORTH_LATITUDE
-            if Projection.is_polar_projection_suitable(self.geometry) == "north"
-            else Pole.POLE_SOUTH_LATITUDE
-        )
-        self.geometry_polar = self.projection.reproject_geometry(
-            self.geometry, self.is_north
-        )
-        self.is_contained = self._contains_strict(self.geometry_polar, Point(0, 0))
-        logger.info(
-            f"Pole is contained in the geometry: {self._contains_strict(self.geometry_polar, Point(0, 0))}"
-        )
+        self.pole_latitude = pole_latitude
+        self.is_north = pole_latitude == Pole.POLE_NORTH_LATITUDE
 
-    def _contains_strict(self, geom, point, tol=1e-6):
-        return geom.buffer(-tol).contains(point)
+        # Project polygon to polar coordinates
+        projection = Projection()
+        geometry_polar = projection.project_to_polar(self.geometry, self.is_north)
 
-    def toWgs84(self) -> Polygon:
-        if self.is_contained:
-            geometry_polar_densified = Projection.densify_geometry(
-                self.geometry_polar, max_distance=self.max_distance
+        # Check if the pole is included
+        self.is_pole_included = self._is_pole_included(geometry_polar)
+        logger.info("Pole is contained in the geometry: {}", self.is_pole_included)
+
+    def _is_pole_included(self, geom: Polygon, tol: float = 1e-6) -> bool:
+        """
+        Determine if the pole is included in a polar-projected polygon.
+
+        Parameters
+        ----------
+        geom : Polygon
+            Polygon projected to polar coordinates.
+        tol : float
+            Small buffer to avoid numerical precision issues.
+
+        Returns
+        -------
+        bool
+            True if the pole is contained in the polygon.
+        """
+        return geom.buffer(-tol).contains(Point(0, 0))
+
+    def _insert_all_sign_changes(self, line: LineString, point: Point) -> LineString:
+        """
+        Insert a point at every longitude sign change in a LineString.
+
+        This is used to handle antimeridian crossings when a pole is included.
+
+        Parameters
+        ----------
+        line : LineString
+            LineString representing polygon exterior.
+        point : Point
+            Point to insert at each sign change.
+
+        Returns
+        -------
+        LineString
+            Updated LineString with points inserted at all sign changes.
+        """
+        coords = list(line.coords)
+        i = 0
+        while i < len(coords) - 1:
+            x1, _ = coords[i]
+            x2, _ = coords[i + 1]
+            if x1 * x2 < 0:
+                coords.insert(i + 1, (point.x, point.y))
+                i += 1
+            i += 1
+        return LineString(coords)
+
+    def make_valid_geojson_geometry(self) -> Polygon:
+        """
+        Produce a GeoJSON-ready polygon, adjusting for antimeridian and pole inclusion.
+
+        Returns
+        -------
+        Polygon
+            Polygon valid for GeoJSON with coordinates adjusted as necessary.
+        """
+        if self.is_pole_included:
+            from polar2wgs84.splitter import AntimeridianLineSplitter
+
+            # Normalize polygon longitudes to [0, 360]
+            geometry_360 = normalize_lon_to_360(self.geometry)
+            line = LineString(geometry_360.exterior.coords)
+
+            # Split along the antimeridian if needed
+            antimeridian = AntimeridianLineSplitter(line)
+            point: Point = antimeridian.split()
+
+            # Insert points at all sign changes for original polygon
+            line_180 = LineString(self.geometry.exterior.coords)
+            line: LineString = self._insert_all_sign_changes(
+                line_180, Point(-180, point.y)
             )
-            geometry_wgs84 = self.projection.reproject_geometry(
-                geometry_polar_densified, self.is_north, reverse=True
-            )
+
+            # Create a polar cap along the pole
             cap_ring = [
-                (lon, self.physical_pole) for lon in np.linspace(180, -180, 100)
+                (lon, self.pole_latitude)
+                for lon in np.linspace(
+                    PoleFactory.LONGITUDE_EST, PoleFactory.LONGITUDE_WEST, 2
+                )
             ]
-            coords_reorder = list(
-                shift_coords_to_minus_180(tuple(geometry_wgs84.exterior.coords))
-            )
+
+            # Reorganize coordinates and append polar cap
+            coords_reorder = reorganize_longitudes(line)
             coords_reorder.extend(cap_ring)
+
+            # Ensure polygon closure
             if coords_reorder[0] != coords_reorder[-1]:
                 coords_reorder.append(coords_reorder[0])
 
-            polygon_wgs84 = orient(
-                limit_polygon_vertices(
-                    Polygon(coords_reorder),
-                    max_points=60,
-                    tolerance_start=self.tolerance,
-                )
-            )
+            polygon_wgs84 = orient(Polygon(coords_reorder))
         else:
-            polygon_wgs84 = limit_polygon_vertices(
-                self.geometry, max_points=60, tolerance_start=self.tolerance
-            )
+            polygon_wgs84 = self.geometry
+
         return polygon_wgs84
+
+
+class NorthPole(Pole):
+    """
+    Polygon representing the North Pole.
+    """
+
+    def __init__(self, geometry: Polygon):
+        super().__init__(geometry, Pole.POLE_NORTH_LATITUDE)
+
+
+class SouthPole(Pole):
+    """
+    Polygon representing the South Pole.
+    """
+
+    def __init__(self, geometry: Polygon):
+        super().__init__(geometry, Pole.POLE_SOUTH_LATITUDE)
+
+
+class PoleFactory:
+    """
+    Factory to create the correct Pole object (North or South) based on
+    polygon latitude.
+
+    Attributes
+    ----------
+    LONGITUDE_WEST : float
+        Western boundary longitude (-180).
+    LONGITUDE_EST : float
+        Eastern boundary longitude (180).
+    EQUATOR_LATITUDE : float
+        Latitude of the equator (0).
+    EQUATOR_LINE : LineString
+        Representation of the equator as a LineString.
+    """
+
+    LONGITUDE_WEST = -180
+    LONGITUDE_EST = 180
+    EQUATOR_LATITUDE = 0
+
+    EQUATOR_LINE = LineString(
+        [
+            (LONGITUDE_WEST, EQUATOR_LATITUDE),
+            (LONGITUDE_EST, EQUATOR_LATITUDE),
+        ]
+    )
+
+    @staticmethod
+    def create(geometry: Polygon) -> Pole:
+        """
+        Create the appropriate Pole instance based on polygon latitude.
+
+        Parameters
+        ----------
+        geometry : Polygon
+            Input polygon.
+
+        Returns
+        -------
+        Pole
+            NorthPole or SouthPole instance.
+        """
+        latitude = geometry.exterior.coords[0][1]
+        return NorthPole(geometry) if latitude >= 0 else SouthPole(geometry)
