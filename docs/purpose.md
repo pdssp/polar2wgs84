@@ -4,7 +4,7 @@ This Python code defines a set of classes and functions for processing, reprojec
 
 ## Key Components and Functionality
 
-::: polar2wgs84.projection.GeometryProcessor
+::: polar2wgs84.footprint
     options:
         show_source: false
         show_root_heading: true
@@ -20,7 +20,87 @@ This Python code defines a set of classes and functions for processing, reprojec
         show_docstring_raises: false
         members: []  # Masque tous les membres (méthodes, attributs)
 
-::: polar2wgs84.projection.GeometryVisualizer
+::: polar2wgs84.projection
+    options:
+        show_source: false
+        show_root_heading: true
+        show_root_full_path: false
+        show_root_members_full_path: false
+        show_signature: false
+        show_signature_annotations: false
+        show_docstring_description: true
+        show_docstring_examples: false
+        show_docstring_attributes: false
+        show_docstring_parameters: false
+        show_docstring_returns: false
+        show_docstring_raises: false
+        members: []  # Masque tous les membres (méthodes, attributs)
+
+::: polar2wgs84.pole
+    options:
+        show_source: false
+        show_root_heading: true
+        show_root_full_path: false
+        show_root_members_full_path: false
+        show_signature: false
+        show_signature_annotations: false
+        show_docstring_description: true
+        show_docstring_examples: false
+        show_docstring_attributes: false
+        show_docstring_parameters: false
+        show_docstring_returns: false
+        show_docstring_raises: false
+        members: []  # Masque tous les membres (méthodes, attributs)
+
+::: polar2wgs84.splitter
+    options:
+        show_source: false
+        show_root_heading: true
+        show_root_full_path: false
+        show_root_members_full_path: false
+        show_signature: false
+        show_signature_annotations: false
+        show_docstring_description: true
+        show_docstring_examples: false
+        show_docstring_attributes: false
+        show_docstring_parameters: false
+        show_docstring_returns: false
+        show_docstring_raises: false
+        members: []  # Masque tous les membres (méthodes, attributs)
+
+::: polar2wgs84.densify_geometry
+    options:
+        show_source: false
+        show_root_heading: true
+        show_root_full_path: false
+        show_root_members_full_path: false
+        show_signature: false
+        show_signature_annotations: false
+        show_docstring_description: true
+        show_docstring_examples: false
+        show_docstring_attributes: false
+        show_docstring_parameters: false
+        show_docstring_returns: false
+        show_docstring_raises: false
+        members: []  # Masque tous les membres (méthodes, attributs)
+
+::: polar2wgs84.visu
+    options:
+        show_source: false
+        show_root_heading: true
+        show_root_full_path: false
+        show_root_members_full_path: false
+        show_signature: false
+        show_signature_annotations: false
+        show_docstring_description: true
+        show_docstring_examples: false
+        show_docstring_attributes: false
+        show_docstring_parameters: false
+        show_docstring_returns: false
+        show_docstring_raises: false
+        members: []  # Masque tous les membres (méthodes, attributs)
+
+::: polar2wgs84.angle_operation
     options:
         show_source: false
         show_root_heading: true

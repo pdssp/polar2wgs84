@@ -198,7 +198,7 @@ doc-pdf:
 	PYTHONPATH=. uv run mkdocs build
 
 visu-doc-pdf:
-	xdg-open docs/build/latex/*.pdf
+	xdg-open site/docs/polar2wgs84.pdf
 
 visu-doc:
 	PYTHONPATH=. uv run mkdocs serve

@@ -27,7 +27,7 @@ subprocess.run(
         "-u",
         "-d",
         "--output-file",
-        "third_party.md",
+        "docs/legal.md",
         "-p",
     ]
     + packages

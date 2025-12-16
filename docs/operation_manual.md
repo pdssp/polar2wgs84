@@ -30,60 +30,63 @@ $ polar2wgs84 --geometry "[(lon1, lat1), (lon2, lat2), ..., (lon1, lat1)]" --crs
 
 Arguments:
 
-|   Argument    |      Description                         | Example                   |
-|---------------|------------------------------------------|---------------------------|
-| --geometry    | Geometry as a list of (longitude, latitude) tuples. Must be a closed polygon. |--geometry "[(0, 1), (10, 0), (10, 10), (0, 10), (0, 1)]" |
-| --crs         | Source CRS: PLATE_CARREE (EPSG:4326), NORTH_STEREO (EPSG:3575), or SOUTH_STEREO (EPSG:3031). | --crs SOUTH_STEREO |
-| --level       | Logging level. Default: INFO.            | --level DEBUG             |
+|   Argument        |      Description                         | Example                   |
+|-------------------|------------------------------------------|---------------------------|
+| --geometry        | Geometry as a list of (longitude, latitude) tuples. Must be a closed polygon. |--geometry "[(0, 1), (10, 0), (10, 10), (0, 10), (0, 1)]" |
+| --densify_polygon | Maximum distance between points in Km (default: 5)" |                |
+| --radius_planet   | Radius of the planet in Km (default: Earth radius)  |                |
+| --simplify_points | Maximum number of vertices (default: 20)            |                |
+| --simplify_tolerance_start | Initial simplification tolerance in meters (default: 1000)  |       |
+| --simplify_tolerance_max | aximum allowed tolerance in meters (default: 50000)           |       |
+| --level           | Logging level. Default: INFO.            | --level DEBUG             |
 
 ### Example
 
 ```shell
-$ polar2wgs84 --geometry "[(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)]" --crs SOUTH_STEREO --level DEBUG
+$ polar2wgs84 --geometry "[(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)]" --level DEBUG
 ```
 
 ## Developer Usage
 
 To use the library programmatically, look at the tests
 
-
-
-
-
 ## Mode selection and control
 
 ### Command-Line Modes
 
-- PLATE_CARREE: Default mode (EPSG:4326), expressed as degrees
-- NORTH_STEREO: North Pole stereographic projection (EPSG:3575), expressed as meters
-- SOUTH_STEREO: South Pole stereographic projection (EPSG:3031), expressed as meters
+N/A
 
 ### Developer Modes
 
 Directly specify the source and destination CRS:
 
 ```python
-processor = GeometryProcessor(src_crs="EPSG:3031", dst_crs="EPSG:4326", geom=polygon)
+footprint = Footprint(polygon)
+geometry_valid = footprint.make_valid_geojson_geometry()
+geometry_valid_simplified = footprint.to_wgs84_plate_carre(geometry_valid, **arguments)
 ```
 
 ## Normal operations
 
 ### Command-Line Workflow
 
-- The script densifies the geometry to ensure sufficient detail.
-- It reprojects the geometry to the target CRS (EPSG:4326).
+- The script create a valid geometry for GeoJson
+- It reprojects the geometry to the target PLATE CARREE.
+- It densifies the geometry to ensure sufficient detail.
 - It simplifies the geometry to reduce complexity.
-- It back-projects the geometry to the source CRS for validation.
+- It back-projects the geometry to the WGS84.
 - It visualizes the original, reprojected, and back-projected geometries.
 
 ### Developer Workflow
 
 Use the GeometryProcessor class to:
 
-- Densify the geometry: densify_geometry(max_distance).
-- Reproject the geometry: reproject_geometry(geom).
-- Simplify the geometry: simplify_geometry(geom, tolerance).
-- Check polygon validity: check_polygon(polygon).
+- The script create a valid geometry for GeoJson
+- It reprojects the geometry to the target PLATE CARREE.
+- It densifies the geometry to ensure sufficient detail.
+- It simplifies the geometry to reduce complexity.
+- It back-projects the geometry to the WGS84.
+- It visualizes the original, reprojected, and back-projected geometries.
 
 ## Normal termination
 
@@ -105,7 +108,9 @@ Developers should use try-except blocks to catch exceptions:
 
 ```python
 try:
-    processor = GeometryProcessor(src_crs="EPSG:3031", dst_crs="EPSG:4326", geom=polygon)
+    footprint = Footprint(polygon)
+    geometry_valid = footprint.make_valid_geojson_geometry()
+    geometry_valid_simplified = footprint.to_wgs84_plate_carre(geometry_valid, **arguments)
 except Exception as error:
     print(f"Error: {error}")
 ```
@@ -116,7 +121,7 @@ Command-Line: If an error occurs, check the log output for details and correct t
 Developers: Use the check_polygon function to validate geometries before processing:
 
 ```python
-from polar2wgs84.projection import check_polygon
+from polar2wgs84.footprint import check_polygon
 check_polygon(polygon, verbose=True)
 ```
 
@@ -140,6 +145,5 @@ The command-line script generates a 3-panel visualization:
 | Issue                 |  Solution                                             |
 |-----------------------|-------------------------------------------------------|
 | Invalid geometry      | Use check_polygon to validate the input.              |
-| Unsupported CRS       | Use PLATE_CARREE, NORTH_STEREO, or SOUTH_STEREO.      |
 | Projection errors     | Verify the input coordinates and CRS.                 |
 | Visualization issues  | Ensure matplotlib and cartopy are installed.          |
