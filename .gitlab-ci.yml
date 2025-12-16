@@ -52,6 +52,7 @@ include:
     inputs:
       # Admin user for SonarQube, used for configuration and permissions
       sq_users_admin: jean-christophe.malapert@cnes.fr
+      sq_users_reader: ${TEAM_EMAIL}
       custom_args_sonar_scanner: -Dsonar.gitlab.url=${CI_PROJECT_URL} -Dsonar.links.ci=${CI_PROJECT_URL}/pipelines -Dsonar.links.issue=${CI_PROJECT_URL}/-/issues -Dsonar.links.scm=${CI_PROJECT_URL} -Dsonar.projectBaseDir=${CI_PROJECT_DIR} -Dsonar.projectVersion=${PROJECT_VERSION}
 
 # Default configuration for all jobs in this pipeline
@@ -95,6 +96,7 @@ stages:
 pages:
   image: ${CI_TEMPLATE_REGISTRY_HOST}/${TAG_DOCKER_IMAGE_PYTHON}
   stage: doc
+  retry: 2
   extends: .python-job
   script:
     - make prepare-dev
@@ -111,6 +113,7 @@ pages:
 # Job to run tests and generate coverage reports
 test:
   stage: test
+  retry: 2
   extends: .python-job
   artifacts:
     expose_as: coverage report
@@ -135,6 +138,7 @@ prepare_version:
   extends: .python-job
   # Specify that this job runs in the 'test' stage
   stage: test
+  retry: 2
   script:
     # Get Project version
     - UV_VERSION=$(uv version --short)
@@ -148,6 +152,7 @@ prepare_version:
 # Job to build the package
 package:
     stage: package
+    retry: 2
     extends: .python-job
     script:
       - make prepare-dev
@@ -160,6 +165,7 @@ package:
 # Job to publish the package to Artifactory
 publish-artifactory:
   stage: deploy
+  retry: 2
   extends: .python-job
   needs:
     - package
@@ -177,6 +183,7 @@ publish-artifactory:
 
 sync_to_github:
   stage: sync
+  retry: 2
   image: ${CI_TEMPLATE_REGISTRY_HOST}/${TAG_DOCKER_IMAGE_PYTHON}
   script:
     - git config --global user.email "jean-christophe.malapert@cnes.fr"
