@@ -185,7 +185,7 @@ class DensifyGeometryGeodesic:
         return new_coords
 
     def densify_polygon_km(
-        self, max_step_km: float = 5.0, radius_planet: float = R_EARTH_KM, **kwargs
+        self, max_step_km: float = 5.0, radius_planet: float = R_EARTH_KM
     ) -> Polygon:
         """
         Densify the polygon along geodesic paths.

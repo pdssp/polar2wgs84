@@ -42,7 +42,7 @@ class Footprint:
         # Ensure polygon is oriented CCW and longitudes are normalized to [-180, 180]
         self.geometry = orient(normalize_lon_to_180(geometry))
         self.stats = self._compute_stats_location()
-        self.densifyGeometry = DensifyGeometryGeodesic(self.geometry)
+        self.densify_geometry = DensifyGeometryGeodesic(self.geometry)
         self.projection = Projection()
 
     def _compute_stats_location(self) -> Stats:
@@ -115,14 +115,29 @@ class Footprint:
         Polygon or MultiPolygon
             Processed polygon(s) in WGS84 coordinates.
         """
+        expected_params_densify = {"max_step_km", "radius_planet"}
+        filtered_kwargs_densify = {
+            k: v for k, v in kwargs.items() if k in expected_params_densify
+        }
+
+        expected_params_limit_poly = {
+            "max_points",
+            "tolerance_start",
+            "tolerance_factor",
+            "tolerance_max",
+        }
+        filtered_kwargs_limit_poly = {
+            k: v for k, v in kwargs.items() if k in expected_params_limit_poly
+        }
+
         if isinstance(geometry, Polygon):
-            self.densifyGeometry.geometry = geometry
-            geometry_density: Polygon = self.densifyGeometry.densify_polygon_km(
-                **kwargs
+            self.densify_geometry.geometry = geometry
+            geometry_density: Polygon = self.densify_geometry.densify_polygon_km(
+                **filtered_kwargs_densify
             )
             poly_car = self.projection.project_to_plate_carree(geometry_density)
             poly_car_simplified = DensifyGeometryGeodesic.limit_polygon_vertices(
-                poly_car, **kwargs
+                poly_car, **filtered_kwargs_limit_poly
             )
             wgs84_simplified = self.projection.project_to_plate_carree(
                 poly_car_simplified, reverse=True
@@ -130,11 +145,13 @@ class Footprint:
         else:
             geoms = []
             for geom in geometry.geoms:
-                self.densifyGeometry.geometry = geom
-                geometry_density = self.densifyGeometry.densify_polygon_km(**kwargs)
+                self.densify_geometry.geometry = geom
+                geometry_density = self.densify_geometry.densify_polygon_km(
+                    **filtered_kwargs_densify
+                )
                 poly_car = self.projection.project_to_plate_carree(geometry_density)
                 poly_car_simplified = DensifyGeometryGeodesic.limit_polygon_vertices(
-                    poly_car, **kwargs
+                    poly_car, **filtered_kwargs_limit_poly
                 )
                 geom_simplified = self.projection.project_to_plate_carree(
                     poly_car_simplified, reverse=True
