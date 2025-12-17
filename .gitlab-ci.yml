@@ -2,10 +2,25 @@
 # https://docs.gitlab.com/ee/ci/yaml/workflow.html#switch-between-branch-pipelines-and-merge-request-pipelines
 workflow:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" # Run pipeline for merge request events
-    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS # Skip branch pipeline if there is an open merge request
+    # Run pipeline for merge request events
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+    # Skip branch pipeline if there is an open merge request
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
-    - if: $CI_COMMIT_BRANCH # Run pipeline for branch commits
+
+    # Run pipeline for branch commits
+    - if: $CI_COMMIT_BRANCH
+
+    # Override variables when tags are used (production)
+    - if: $CI_COMMIT_TAG
+      variables:
+        ARTIFACTORY_USER: "${PDSSP_PROD_USERNAME}"
+        ARTIFACTORY_TOKEN: "${PDSSP_PROD_TOKEN}"
+        ARTIFACTORY_REPO: "pdssp-pip-prod-local"
+
+    # Fallback
+    - when: always
 
 # Define global CI/CD variables for the pipeline
 variables:
@@ -43,6 +58,7 @@ variables:
   SONAR_TOKEN : ${PDSSP_SONAR_TOKEN}
   # Project Version
   PROJECT_VERSION : "0.0.0"
+
 
 # Include the SonarQube component for code quality analysis
 # This component is maintained in a separate repository and provides reusable SonarQube integration

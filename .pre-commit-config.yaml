@@ -36,3 +36,10 @@ repos:
     hooks:
       - id: pyupgrade
         args: [--py312-plus]
+
+  - repo: https://github.com/twisted/towncrier
+    rev: 25.8.0  # Mettre à jour avec la dernière version si nécessaire
+    hooks:
+      - id: towncrier-update
+        files: changelog\.d/  # Répertoire où sont stockés les fragments de nouvelles
+        args: ['--keep']  # Conserve les fragments après traitement

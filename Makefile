@@ -212,9 +212,6 @@ visu-doc-pdf:
 visu-doc:
 	PYTHONPATH=. uv run mkdocs serve
 
-generate_changelog:
-	towncrier build --version $(CURRENT_VERSION)
-
 
 ################################################################################
 # VERSION / RELEASE
