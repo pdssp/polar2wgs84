@@ -30,7 +30,7 @@ issue_format = "[#{issue}](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/-/iss
 [project]
 name = "polar2wgs84"
 readme = "README.md"
-description = "polar2wgs84 is a Python tool to seamlessly convert geographic footprints between polar stereographic projections (EPSG:3031/EPSG:3575) and WGS84 (EPSG:4326), handling pole-crossing geometries, densification, and validation for accurate GIS workflows."
+description = "Global geometry processing utilities for GeoJSON-safe WGS84 polygons."
 authors = [{name="Jean-Christophe Malapert", email="jean-christophe.malapert@cnes.fr"}, ]
 license = "Apache-2.0"
 packages = [{include = "polar2wgs84"}]
@@ -41,6 +41,7 @@ dependencies = [
     "cartopy==0.25.0",
     "loguru==0.7.3",
     "matplotlib==3.10.8",
+    "numba==0.63.1",
     "numpy==2.3.5",
     "pyproj==3.7.2",
     "shapely==2.1.2",
@@ -81,4 +82,5 @@ dev = [
     "mypy>=1.19.0",
     "pylint>=4.0.4",
     "toml>=0.10.2",
+    "mkdocs-gallery==0.10.4",
 ]

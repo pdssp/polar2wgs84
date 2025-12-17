@@ -1,4 +1,4 @@
-# Polar to WGS84 Converter - polar2wgs84 is a Python tool to seamlessly convert geographic footprints between polar stereographic projections (EPSG:3031/EPSG:3575) and WGS84 (EPSG:4326), handling pole-crossing geometries, densification, and validation for accurate GIS workflows.
+# Polar to WGS84 Converter - Global geometry processing utilities for GeoJSON-safe WGS84 polygons.
 # Copyright (C) 2025 - CNES (Jean-Christophe Malapert for PDSSP)
 # This file is part of Polar to WGS84 Converter <https://gitlab.cnes.fr/pdssp/common/polar2wgs84>
 # SPDX-License-Identifier: Apache-2.0

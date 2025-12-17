@@ -120,6 +120,9 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# profiling
+/prof
+
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -131,5 +134,6 @@ dmypy.json
 .polar2wgs84
 
 docs/build/
+docs/generated/
 
 **/tests/msap_data/

@@ -1,13 +1,10 @@
 import json
+import os
 from pathlib import Path
 
-import cartopy.crs as ccrs
-import matplotlib.pyplot as plt
 import pytest
 from polar2wgs84.footprint import check_polygon
 from polar2wgs84.footprint import Footprint
-from polar2wgs84.projection import compute_centroid
-from polar2wgs84.visu import GeometryVisualizer
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
 from shapely.geometry import shape
@@ -172,7 +169,6 @@ def compute_nbpoints(geometry: Polygon | MultiPolygon):
 
 
 @pytest.mark.parametrize("geometry", test_geometries)
-@pytest.mark.manual
 def test_manual_geometry_processing(geometry):
     """Test manuel pour chaque géométrie définie."""
     print(f"\n=== Testing: {geometry['name']} ===")
@@ -181,69 +177,8 @@ def test_manual_geometry_processing(geometry):
     footprint = Footprint(polygon)
     geom_wgs84 = footprint.make_valid_geojson_geometry()
     geom_wgs84_simplified = footprint.to_wgs84_plate_carre(geom_wgs84)
-    nb_points = compute_nbpoints(geom_wgs84)
-    nb_points_geom_simplified = compute_nbpoints(geom_wgs84_simplified)
 
+    check_polygon(geom_wgs84)
+    check_polygon(geom_wgs84_simplified)
     assert geom_wgs84.is_valid is True
     assert geom_wgs84_simplified.is_valid is True
-
-    # Vérification des polygones
-    print("\n--- Checking spherical geom ---")
-    check_polygon(geom_wgs84)
-    print("\n--- Checking reprojected geom ---")
-    check_polygon(geom_wgs84_simplified)
-
-    lon_mean, lat_mean = compute_centroid(geom_wgs84)
-
-    proj = ccrs.Orthographic(central_longitude=lon_mean, central_latitude=lat_mean)
-
-    fig = plt.figure(figsize=(21, 7))
-
-    fig.suptitle(f"{geometry['name']}", fontsize=16, fontweight="bold")
-    ax1 = fig.add_subplot(1, 4, 1, projection=proj)
-    GeometryVisualizer.draw_geometry(
-        ax1,
-        "original",
-        polygon,
-        ccrs.PlateCarree(),
-        mode="points",
-        edgecolor="blue",
-    )
-    ax2 = fig.add_subplot(1, 4, 2, projection=ccrs.PlateCarree())
-    GeometryVisualizer.draw_geometry(
-        ax2,
-        f"Projected ({nb_points}) points",
-        geom_wgs84,
-        ccrs.PlateCarree(),
-        mode="lines",
-        edgecolor="blue",
-    )
-
-    # Original
-    ax3 = fig.add_subplot(1, 4, 3, projection=ccrs.PlateCarree())
-    GeometryVisualizer.draw_geometry(
-        ax3,
-        f"Densify & projected ({nb_points_geom_simplified} points)",
-        geom_wgs84_simplified,
-        ccrs.PlateCarree(),
-        mode="lines",
-        edgecolor="blue",
-    )
-
-    ax4 = fig.add_subplot(1, 4, 4, projection=proj)
-    GeometryVisualizer.draw_geometry(
-        ax4,
-        f"Densify & projected ({nb_points_geom_simplified} points)",
-        geom_wgs84_simplified,
-        ccrs.PlateCarree(),
-        mode="points",
-        edgecolor="blue",
-    )
-
-    plt.tight_layout()
-    plt.show(block=False)
-
-    user_input = input("Is it valid ? (y/n) [y] : ").strip().lower() or "y"
-    assert user_input == "y", "Graphic rejected by user."
-
-    plt.close()
