@@ -7,7 +7,7 @@
         add_prerelease_version add_stable_version \
         add_req_prod add_req_dev \
         check_update update_latest_dev update_latest_main show_deps_main show_deps_dev show_obsolete \
-        pyclean licences help
+        pyclean licences help profile
 
 CURRENT_VERSION := $(shell grep 'version = ' pyproject.toml | cut -d '"' -f 2)
 UV_INDEX_URL := "https://${PDSSP_PROD_USERNAME}:${PDSSP_PROD_TOKEN}@${UL_ARTIFACTORY_HOST}/artifactory/api/pypi/pypi/simple"
@@ -82,6 +82,11 @@ Usage:\n
 	-------------------------------------------------------------------------\n
 	make pyclean\t\t\t			Clean .pyc and __pycache__ files\n
     make licences\t\t\t           Display licenses of dependencies\n
+	\n
+	-------------------------------------------------------------------------\n
+	\t\tPerformances\n
+	-------------------------------------------------------------------------\n
+	make profile\t\t\t			Profile the code\n
 	\n
 
 endef
@@ -186,6 +191,8 @@ doc:
 	uv run coverage erase
 	uv run coverage run -m pytest -m "not manual" -s
 	uv run coverage html -d docs/_static/coverage
+	make profile
+	mv prof/combined.svg docs/images/profile.svg
 	PYTHONPATH=. uv run mkdocs build
 
 doc-pdf:
@@ -195,6 +202,8 @@ doc-pdf:
 	uv run coverage erase
 	uv run coverage run -m pytest -m "not manual" -s
 	uv run coverage html -d docs/_static/coverage
+	make profile
+	mv prof/combined.svg docs/images/profile.svg
 	PYTHONPATH=. uv run mkdocs build
 
 visu-doc-pdf:
@@ -378,3 +387,11 @@ show_obsolete:
 
 pyclean:
 	find . -type f -name '*.py[co]' -delete -o -type d -name __pycache__ -delete
+
+
+################################################################################
+# PERFORMANCES
+################################################################################
+
+profile:
+	uv run pytest --profile --profile-svg tests/acceptance/profile_test.py

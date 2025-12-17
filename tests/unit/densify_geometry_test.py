@@ -1,5 +1,8 @@
 import numpy as np
 import pytest
+from polar2wgs84.densify_geometry import _densify_segment_km
+from polar2wgs84.densify_geometry import _lonlat_to_unit
+from polar2wgs84.densify_geometry import _unit_to_lonlat
 from polar2wgs84.densify_geometry import DensifyGeometryGeodesic
 from shapely.geometry import Polygon
 
@@ -68,11 +71,11 @@ def test_init_rejects_non_polygon():
 
 
 def test_lonlat_to_unit_and_back_roundtrip(simple_square_polygon):
-    densifier = DensifyGeometryGeodesic(simple_square_polygon)
-
     lon, lat = 12.3, -45.6
-    u = densifier._lonlat_to_unit(lon, lat)
-    lon2, lat2 = densifier._unit_to_lonlat(u)
+    u = _lonlat_to_unit(lon, lat)
+    ll = _unit_to_lonlat(u)
+    lon2 = ll[0]
+    lat2 = ll[1]
 
     assert np.isclose(lon, lon2, atol=1e-6)
     assert np.isclose(lat, lat2, atol=1e-6)
@@ -81,7 +84,7 @@ def test_lonlat_to_unit_and_back_roundtrip(simple_square_polygon):
 def test_densify_segment_zero_length(simple_square_polygon):
     densifier = DensifyGeometryGeodesic(simple_square_polygon)
 
-    pts = densifier._densify_segment_km(
+    pts = _densify_segment_km(
         lon0=0,
         lat0=0,
         lon1=0,
@@ -90,13 +93,13 @@ def test_densify_segment_zero_length(simple_square_polygon):
         radius_planet=densifier.R_EARTH_KM,
     )
 
-    assert pts == [(0, 0)]
+    assert np.allclose(pts, np.array([[0.0, 0.0]]))
 
 
 def test_densify_segment_increases_points(simple_square_polygon):
     densifier = DensifyGeometryGeodesic(simple_square_polygon)
 
-    pts = densifier._densify_segment_km(
+    pts = _densify_segment_km(
         lon0=0,
         lat0=0,
         lon1=10,
@@ -123,7 +126,7 @@ def test_densify_ring_preserves_closure(simple_square_polygon):
         coords, max_step_km=50, radius_planet=densifier.R_EARTH_KM
     )
 
-    assert densified[0] == densified[-1]
+    assert np.array_equal(densified[0], densified[-1])
     assert len(densified) > len(coords)
 
 

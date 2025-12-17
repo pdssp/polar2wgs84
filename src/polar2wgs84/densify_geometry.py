@@ -13,12 +13,116 @@ DensifyGeometryGeodesic
     Provides methods to densify polygons along geodesic paths and simplify them
     while controlling the number of vertices.
 """
-from typing import List
-from typing import Tuple
-
+import numba
 import numpy as np
 from loguru import logger
 from shapely.geometry import Polygon
+
+
+@numba.jit(cache=True)
+def _lonlat_to_unit(lon: float, lat: float) -> np.ndarray:
+    """
+    Convert longitude and latitude to a 3D unit vector.
+
+    Parameters
+    ----------
+    lon : float
+        Longitude in degrees.
+    lat : float
+        Latitude in degrees.
+
+    Returns
+    -------
+    numpy.ndarray
+        3D unit vector corresponding to the point on the sphere.
+    """
+    lon_rad = np.deg2rad(lon)
+    lat_rad = np.deg2rad(lat)
+    return np.array(
+        [
+            np.cos(lat_rad) * np.cos(lon_rad),
+            np.cos(lat_rad) * np.sin(lon_rad),
+            np.sin(lat_rad),
+        ]
+    )
+
+
+@numba.jit(cache=True)
+def _unit_to_lonlat(u: np.ndarray):
+    """
+    Convert a 3D unit vector back to longitude and latitude.
+
+    Parameters
+    ----------
+    u : numpy.ndarray
+        3D unit vector.
+
+    Returns
+    -------
+        (longitude, latitude) in degrees.
+    """
+    out = np.empty(2, dtype=np.float64)
+
+    lon = np.arctan2(u[1], u[0])
+    lat = np.arcsin(u[2])
+
+    out[0] = np.rad2deg(lon)
+    out[1] = np.rad2deg(lat)
+
+    return out
+
+
+@numba.jit(cache=True)
+def _densify_segment_km(
+    lon0,
+    lat0,
+    lon1,
+    lat1,
+    max_step_km,
+    radius_planet,
+):
+    u0 = _lonlat_to_unit(lon0, lat0)
+    u1 = _lonlat_to_unit(lon1, lat1)
+
+    dot = u0[0] * u1[0] + u0[1] * u1[1] + u0[2] * u1[2]
+    if dot > 1.0:
+        dot = 1.0
+    elif dot < -1.0:
+        dot = -1.0
+
+    theta = np.arccos(dot)
+
+    # cas dégénéré
+    if theta < 1e-12:
+        out = np.empty((1, 2), dtype=np.float64)
+        out[0, 0] = lon0
+        out[0, 1] = lat0
+        return out
+
+    step_angle = max_step_km / radius_planet
+    n = int(np.ceil(theta / step_angle))
+    if n < 1:
+        n = 1
+
+    out = np.empty((n + 1, 2), dtype=np.float64)
+    sin_theta = np.sin(theta)
+
+    for i in range(n + 1):
+        t = i / n
+
+        s0 = np.sin((1.0 - t) * theta)
+        s1 = np.sin(t * theta)
+
+        u = (s0 * u0 + s1 * u1) / sin_theta
+
+        # normalisation manuelle
+        norm = np.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2])
+        u /= norm
+
+        out[i, 0] = np.rad2deg(np.arctan2(u[1], u[0]))
+        out[i, 1] = np.rad2deg(np.arcsin(u[2]))
+
+    return out
 
 
 class DensifyGeometryGeodesic:
@@ -51,102 +155,6 @@ class DensifyGeometryGeodesic:
         self.geometry = geometry
         logger.debug("Initialized DensifyGeometryGeodesic with polygon: {}", geometry)
 
-    def _lonlat_to_unit(self, lon: float, lat: float) -> np.ndarray:
-        """
-        Convert longitude and latitude to a 3D unit vector.
-
-        Parameters
-        ----------
-        lon : float
-            Longitude in degrees.
-        lat : float
-            Latitude in degrees.
-
-        Returns
-        -------
-        numpy.ndarray
-            3D unit vector corresponding to the point on the sphere.
-        """
-        lon_rad = np.deg2rad(lon)
-        lat_rad = np.deg2rad(lat)
-        return np.array(
-            [
-                np.cos(lat_rad) * np.cos(lon_rad),
-                np.cos(lat_rad) * np.sin(lon_rad),
-                np.sin(lat_rad),
-            ]
-        )
-
-    def _unit_to_lonlat(self, u: np.ndarray) -> tuple[float, float]:
-        """
-        Convert a 3D unit vector back to longitude and latitude.
-
-        Parameters
-        ----------
-        u : numpy.ndarray
-            3D unit vector.
-
-        Returns
-        -------
-        tuple
-            (longitude, latitude) in degrees.
-        """
-        lon = np.arctan2(u[1], u[0])
-        lat = np.arcsin(u[2])
-        return np.rad2deg(lon), np.rad2deg(lat)
-
-    def _densify_segment_km(
-        self,
-        lon0: float,
-        lat0: float,
-        lon1: float,
-        lat1: float,
-        max_step_km: float,
-        radius_planet: float,
-    ) -> list[tuple[float, float]]:
-        """
-        Densify a geodesic segment between two points.
-
-        Parameters
-        ----------
-        lon0, lat0 : float
-            Start coordinates.
-        lon1, lat1 : float
-            End coordinates.
-        max_step_km : float
-            Maximum distance between interpolated points.
-        radius_planet : float
-            Radius of the planet (e.g., Earth) in km.
-
-        Returns
-        -------
-        list of (lon, lat)
-            List of points along the geodesic segment.
-        """
-        u0 = self._lonlat_to_unit(lon0, lat0)
-        u1 = self._lonlat_to_unit(lon1, lat1)
-
-        # Angle between vectors
-        dot = np.clip(np.dot(u0, u1), -1.0, 1.0)
-        theta = np.arccos(dot)
-
-        if theta == 0:
-            return [(lon0, lat0)]
-
-        # Number of steps along the geodesic
-        step_angle = max_step_km / radius_planet
-        n = int(np.ceil(theta / step_angle))
-
-        pts = []
-        for i in range(n + 1):
-            t = i / n
-            # Spherical linear interpolation (slerp)
-            u = (np.sin((1 - t) * theta) * u0 + np.sin(t * theta) * u1) / np.sin(theta)
-            u /= np.linalg.norm(u)
-            pts.append(self._unit_to_lonlat(u))
-
-        return pts
-
     def _densify_ring_km(
         self,
         coords: list[tuple[float, float]],
@@ -176,7 +184,7 @@ class DensifyGeometryGeodesic:
 
         new_coords = []
         for (lon0, lat0), (lon1, lat1) in zip(coords[:-1], coords[1:]):
-            segment = self._densify_segment_km(
+            segment = _densify_segment_km(
                 lon0, lat0, lon1, lat1, max_step_km, radius_planet
             )
             new_coords.extend(segment[:-1])  # Avoid duplicate points
@@ -237,7 +245,6 @@ class DensifyGeometryGeodesic:
         tolerance_start: float = 1000,
         tolerance_factor: float = 1.5,
         tolerance_max: float = 50000,
-        **kwargs,
     ) -> Polygon:
         """
         Simplify a polygon until it contains at most `max_points` vertices.

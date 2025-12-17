@@ -39,6 +39,8 @@ nav:
       - Tutorial: generated/gallery
   - Tests results: report.html
   - Tests coverage: _static/coverage/index.html
+  - Performances:
+      - Profiling: profile.md
   - Legal : legal.md
 extra_javascript:
   - js/katex.js
