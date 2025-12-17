@@ -4,8 +4,25 @@
 # SPDX-License-Identifier: Apache-2.0
 """
 Module to densify and simplify Shapely geometries along geodesic paths.
-This is particularly useful for polygons near the poles or crossing large
-distances, where planar projection can distort geometry.
+
+This module provides utilities to:
+
+- Interpolate polygon edges along great-circle (geodesic) paths on a sphere instead of straight lines in a planar projection.
+- Reduce geometric distortion for polygons spanning large distances or located at high latitudes (near the poles).
+- Optionally simplify geometries to control vertex count after densification.
+
+The implementation is designed to be:
+
+- Numerically stable for spherical geometry
+- Efficient, using Numba for critical numeric routines
+- Compatible with Shapely polygons (exterior rings)
+
+Notes:
+
+- Coordinates are assumed to be (longitude, latitude) in degrees.
+- Distances are expressed in kilometers.
+- The planet is approximated as a perfect sphere.
+
 
 Classes
 -------
@@ -50,16 +67,18 @@ def _lonlat_to_unit(lon: float, lat: float) -> np.ndarray:
 @numba.jit(cache=True)
 def _unit_to_lonlat(u: np.ndarray):
     """
-    Convert a 3D unit vector back to longitude and latitude.
+    Convert a 3D unit vector back to geographic coordinates.
+    This is the inverse operation of ``_lonlat_to_unit``.
 
     Parameters
     ----------
     u : numpy.ndarray
-        3D unit vector.
+    3D unit vector [x, y, z].
 
     Returns
     -------
-        (longitude, latitude) in degrees.
+    numpy.ndarray
+    Array ``[lon, lat]`` in degrees.
     """
     out = np.empty(2, dtype=np.float64)
 
@@ -81,10 +100,38 @@ def _densify_segment_km(
     max_step_km,
     radius_planet,
 ):
+    """
+    Densify a geodesic segment between two geographic points.
+
+    Intermediate points are inserted along the great-circle arc so that
+    the distance between consecutive points does not exceed ``max_step_km``.
+
+    Parameters
+    ----------
+    lon0, lat0 : float
+    Longitude and latitude of the segment start point (degrees).
+    lon1, lat1 : float
+    Longitude and latitude of the segment end point (degrees).
+    max_step_km : float
+    Maximum allowed distance between two consecutive points (km).
+    radius_planet : float
+    Radius of the planet (km).
+
+    Returns
+    -------
+    numpy.ndarray
+    Array of shape (N, 2) containing interpolated (lon, lat) points.
+    The first point corresponds to the start of the segment.
+
+    """
+    # Convert endpoints to unit vectors
     u0 = _lonlat_to_unit(lon0, lat0)
     u1 = _lonlat_to_unit(lon1, lat1)
 
+    # Dot product gives cos(theta) where theta is the central angle
     dot = u0[0] * u1[0] + u0[1] * u1[1] + u0[2] * u1[2]
+
+    # Numerical safety: clamp to valid acos range
     if dot > 1.0:
         dot = 1.0
     elif dot < -1.0:
@@ -92,13 +139,14 @@ def _densify_segment_km(
 
     theta = np.arccos(dot)
 
-    # cas dégénéré
+    # Degenerate case: points are almost identical
     if theta < 1e-12:
         out = np.empty((1, 2), dtype=np.float64)
         out[0, 0] = lon0
         out[0, 1] = lat0
         return out
 
+    # Convert maximum linear step to angular step
     step_angle = max_step_km / radius_planet
     n = int(np.ceil(theta / step_angle))
     if n < 1:
@@ -107,6 +155,7 @@ def _densify_segment_km(
     out = np.empty((n + 1, 2), dtype=np.float64)
     sin_theta = np.sin(theta)
 
+    # Spherical linear interpolation (SLERP)
     for i in range(n + 1):
         t = i / n
 
@@ -115,7 +164,7 @@ def _densify_segment_km(
 
         u = (s0 * u0 + s1 * u1) / sin_theta
 
-        # normalisation manuelle
+        # Explicit renormalization for numerical stability
         norm = np.sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2])
         u /= norm
 
@@ -127,16 +176,18 @@ def _densify_segment_km(
 
 class DensifyGeometryGeodesic:
     """
-    Class to densify geometries (polygons) along geodesic paths.
-    Useful for preserving shape when projecting, especially near poles
-    or for large-area polygons.
+    Utility class to densify polygon geometries along geodesic paths.
+
+    This class operates on Shapely ``Polygon`` objects and replaces each
+    straight edge with a sequence of points following the great-circle arc
+    on a spherical planet.
 
     Attributes
     ----------
     geometry : shapely.geometry.Polygon
-        Polygon to densify.
+    Input polygon to densify.
     R_EARTH_KM : float
-        Approximate radius of the Earth in kilometers.
+    Mean radius of the Earth in kilometers.
     """
 
     R_EARTH_KM = 6371.0  # Earth's radius in km
@@ -162,7 +213,10 @@ class DensifyGeometryGeodesic:
         radius_planet: float,
     ) -> list[tuple[float, float]]:
         """
-        Densify a closed linear ring (polygon exterior or interior).
+        Densify a closed linear ring (exterior or interior of a polygon).
+
+        Each consecutive coordinate pair is densified independently and
+        concatenated to form a new closed ring.
 
         Parameters
         ----------
@@ -179,16 +233,21 @@ class DensifyGeometryGeodesic:
             Densified ring coordinates.
         """
         coords = list(coords)
+
+        # Ensure ring closure
         if coords[0] != coords[-1]:
-            coords.append(coords[0])  # Ensure closure
+            coords.append(coords[0])
 
         new_coords = []
         for (lon0, lat0), (lon1, lat1) in zip(coords[:-1], coords[1:]):
             segment = _densify_segment_km(
                 lon0, lat0, lon1, lat1, max_step_km, radius_planet
             )
-            new_coords.extend(segment[:-1])  # Avoid duplicate points
 
+            # Drop last point to avoid duplicates between segments
+            new_coords.extend(segment[:-1])
+
+        # Explicitly close the ring
         new_coords.append(new_coords[0])  # Close ring
         return new_coords
 
@@ -197,6 +256,8 @@ class DensifyGeometryGeodesic:
     ) -> Polygon:
         """
         Densify the polygon along geodesic paths.
+
+        Both the exterior boundary and all interior holes are processed.
 
         Parameters
         ----------
@@ -247,25 +308,28 @@ class DensifyGeometryGeodesic:
         tolerance_max: float = 50000,
     ) -> Polygon:
         """
-        Simplify a polygon until it contains at most `max_points` vertices.
+        Iteratively simplify a polygon until a vertex limit is reached.
+
+        The simplification tolerance is progressively increased until the
+        number of exterior vertices is less than or equal to ``max_points``.
 
         Parameters
         ----------
         polygon : shapely.geometry.Polygon
-            Polygon to simplify.
-        max_points : int
-            Maximum number of vertices.
-        tolerance_start : float
-            Initial simplification tolerance.
-        tolerance_factor : float
-            Factor to increase tolerance at each iteration.
-        tolerance_max : float
-            Maximum allowed tolerance.
+        Polygon to simplify.
+        max_points : int, optional
+        Target maximum number of exterior vertices.
+        tolerance_start : float, optional
+        Initial tolerance for ``shapely.simplify``.
+        tolerance_factor : float, optional
+        Multiplicative factor applied to the tolerance at each iteration.
+        tolerance_max : float, optional
+        Maximum allowed tolerance.
 
         Returns
         -------
         shapely.geometry.Polygon
-            Simplified polygon with at most `max_points` vertices.
+        Simplified polygon (topology preserved).
         """
         logger.info(
             f"""

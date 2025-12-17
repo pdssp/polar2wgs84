@@ -76,12 +76,28 @@ class Footprint:
 
     def make_valid_geojson_geometry(self) -> Polygon | MultiPolygon:
         """
-        Generate a valid GeoJSON-ready polygon or multipolygon,
-        handling poles, antimeridian crossing, and equator splitting as needed.
+        Generate a GeoJSON-valid geometry by resolving global-geography edge cases.
 
-        Returns
-        -------
-        Polygon or MultiPolygon
+        Algorithm overview
+        ------------------
+        GeoJSON imposes strict rules on polygon validity, especially for geometries
+        expressed in longitude/latitude (WGS84). This method enforces those rules by
+        detecting and resolving three major sources of invalidity:
+
+        1. **Polar inclusion**
+        Polygons that fully enclose the North or South Pole cannot be represented
+        as a single linear ring in GeoJSON without special handling.
+
+        2. **Antimeridian crossing (±180° longitude)**
+        Polygons crossing the dateline must be split into multiple parts to
+        avoid longitude discontinuities.
+
+        3. **Equator crossing**
+        Polygons spanning both hemispheres may require splitting to ensure
+        correct orientation and winding rules.
+
+        The algorithm selects the appropriate correction strategy based on the
+        latitude distribution of the geometry.
         """
         if self.stats.only_positive_lat or self.stats.only_negative_lat:
             # Polygon is entirely north or south → may contain pole
@@ -101,19 +117,53 @@ class Footprint:
         self, geometry: Polygon | MultiPolygon, **kwargs
     ) -> Polygon | MultiPolygon:
         """
-        Densify, project, and optionally simplify the polygon to Plate Carrée projection.
+        Densify, project, and optionally simplify a geometry using a
+        Plate Carrée (equirectangular) intermediate projection.
+
+        Algorithm overview
+        ------------------
+        This method follows a 4-step pipeline designed to preserve geometric
+        fidelity for large or high-latitude polygons while keeping vertex
+        count under control:
+
+        1. **Geodesic densification (on the sphere)**
+        Polygon edges are densified along great-circle paths in WGS84
+        (lon/lat). This prevents distortions that would appear if long
+        edges were projected directly in a planar coordinate system.
+
+        2. **Projection to Plate Carrée**
+        The densified polygon is projected to a simple planar coordinate
+        system (lon, lat → x, y). This projection is the projection for
+        STAC's geometry
+
+        3. **Planar simplification**
+        The polygon is simplified in projected space to reduce the number
+        of vertices while preserving topology. Simplifying in planar space
+        is faster and more predictable than simplifying directly on the
+        sphere.
+
+        4. **Back-projection to WGS84**
+        The simplified geometry is re-projected back to WGS84 coordinates.
+
+        This approach ensures:
+        - Correct handling of long edges and polar regions
+        - Controlled vertex count
+        - Minimal topological distortion
 
         Parameters
         ----------
         geometry : Polygon or MultiPolygon
-            Polygon(s) to process.
+            Input geometry in WGS84 coordinates (lon, lat).
         kwargs : dict
-            Additional parameters for densification and simplification.
+            Optional parameters forwarded to:
+            - geodesic densification
+            - polygon vertex limiting (simplification)
 
         Returns
         -------
         Polygon or MultiPolygon
-            Processed polygon(s) in WGS84 coordinates.
+            Geometry simplified in a geodesically consistent manner
+            and returned in WGS84 coordinates.
         """
         expected_params_densify = {"max_step_km", "radius_planet"}
         filtered_kwargs_densify = {
