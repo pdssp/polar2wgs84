@@ -3,6 +3,8 @@ Multi-Antimeridian Crossing Polygon in WGS84
 ============================================
 """
 
+import os
+
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 from polar2wgs84.footprint import Footprint
@@ -10,6 +12,13 @@ from polar2wgs84.projection import compute_centroid
 from polar2wgs84.projection import compute_nbpoints
 from polar2wgs84.visu import GeometryVisualizer
 from shapely import Polygon
+
+cnes_certificate = os.getenv("CNES_CERTIFICATE", False)
+if cnes_certificate:
+    import ssl
+
+    ssl._create_default_https = ssl.create_default_context
+    ssl._create_default_https_context().load_verify_locations(cafile=cnes_certificate)
 
 polygon = Polygon(
     [

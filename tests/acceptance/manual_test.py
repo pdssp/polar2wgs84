@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import cartopy.crs as ccrs
@@ -11,6 +12,13 @@ from polar2wgs84.visu import GeometryVisualizer
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
 from shapely.geometry import shape
+
+cnes_certificate = os.getenv("CNES_CERTIFICATE", False)
+if cnes_certificate:
+    import ssl
+
+    ssl._create_default_https = ssl.create_default_context
+    ssl._create_default_https_context().load_verify_locations(cafile=cnes_certificate)
 
 
 def load_polygon(geometry):
