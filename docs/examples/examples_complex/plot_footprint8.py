@@ -14,19 +14,11 @@ from polar2wgs84.projection import compute_nbpoints
 from polar2wgs84.visu import GeometryVisualizer
 from shapely.geometry import shape
 
-cnes_certificate = os.getenv("CNES_CERTIFICATE", False)
-if cnes_certificate:
-    import ssl
-
-    ssl._create_default_https = ssl.create_default_context
-    ssl._create_default_https_context().load_verify_locations(cafile=cnes_certificate)
-
 
 def load_polygon(geometry):
     polygon = geometry
     if isinstance(polygon, str):
         file_path = os.path.join("../../../tests/acceptance", geometry)
-        print(file_path)
         with open(file_path, encoding="utf-8") as f:
             data = json.load(f)
         polygon = shape(data["features"][0]["geometry"])

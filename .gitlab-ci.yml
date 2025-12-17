@@ -82,6 +82,9 @@ default:
     - pip install --upgrade pip
     # Install required Python packages for the project
     - pip install cookiecutter uv
+    # Environment variables for SSL support
+    - export REQUESTS_CA_BUNDLE=${CNES_CERTIFICATE}
+    - export SSL_CERT_FILE=${CNES_CERTIFICATE}
 
 # Define the stages of the pipeline and their execution order
 stages:
