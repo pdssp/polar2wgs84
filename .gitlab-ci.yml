@@ -65,6 +65,8 @@ default:
   # Use a Docker image from the internal registry for Python jobs
   image: ${CI_TEMPLATE_REGISTRY_HOST}/${TAG_DOCKER_IMAGE_PYTHON}
   before_script:
+    # Installation de Graphviz pour la génération de graphiques
+    - apt-get update && apt-get install -y graphviz
     # Download the JFrog CLI for artifact management
     - curl -sS -u ${ARTIFACTORY_USER}:${ARTIFACTORY_TOKEN} -O "https://${UL_ARTIFACTORY_HOST}/artifactory/jfrog-cli-go-remote/v2/2.78.1/jfrog-cli-linux-amd64/jfrog"
     # Grant execute permissions to the JFrog CLI binary
