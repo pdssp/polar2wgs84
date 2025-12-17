@@ -15,4 +15,4 @@ This manual serves as a comprehensive resource for:
 
 ## Context
 
-The goal is to project a geometry defined on a spherical surface (e.g., a 3D globe or ellipsoid) into the EPSG:4326 coordinate reference system (CRS). This projection is necessary to ensure compatibility with SpatioTemporal Asset Catalog (STAC) items, which require geometries in WGS84 (EPSG:4326) for geospatial interoperability.
+The goal is to create a WGS84 geometry that manage the poles and antimeridian. This processing is necessary to ensure compatibility with SpatioTemporal Asset Catalog (STAC) items, which require geometries in WGS84 (EPSG:4326) for geospatial interoperability.
