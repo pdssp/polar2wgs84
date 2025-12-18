@@ -50,6 +50,8 @@ Design principles
 - **Standards-aware**: Output geometries conform to GeoJSON winding
   and continuity rules.
 """
+from loguru import logger
+
 from ._version import __author__
 from ._version import __author_email__
 from ._version import __copyright__
@@ -60,5 +62,10 @@ from ._version import __title__
 from ._version import __url__
 from ._version import __version__
 from .config import configure_logging
+from .footprint import Footprint
 
-configure_logging()
+info_format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>"
+configure_logging(level="INFO", format=info_format)
+logger.info(f"{__name_soft__} V{__version__} imported")
+
+__all__ = ["Footprint"]

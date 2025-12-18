@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from polar2wgs84.exception import UnsupportedGeometryTypeError
 from polar2wgs84.projection import compute_centroid
 from polar2wgs84.projection import compute_nbpoints
 from polar2wgs84.projection import Projection
@@ -177,5 +178,5 @@ def test_compute_centroid_multipolygon(multipolygon):
 
 
 def test_compute_centroid_invalid_type():
-    with pytest.raises(TypeError):
+    with pytest.raises(UnsupportedGeometryTypeError):
         compute_centroid("not a geometry")  # type: ignore

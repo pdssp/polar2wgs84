@@ -15,14 +15,13 @@ from polar2wgs84 import __author__
 from polar2wgs84 import __copyright__
 from polar2wgs84 import __description__
 from polar2wgs84 import __version__
+from polar2wgs84.config import configure_logging
 from polar2wgs84.densify_geometry import DensifyGeometryGeodesic
 from polar2wgs84.footprint import Footprint
 from polar2wgs84.projection import compute_centroid
 from polar2wgs84.projection import compute_nbpoints
 from polar2wgs84.visu import GeometryVisualizer
 from shapely.geometry import Polygon
-
-logger.remove()
 
 
 class SmartFormatter(argparse.HelpFormatter):
@@ -156,8 +155,11 @@ def run():
     signal.signal(signal.SIGINT, handler.signal_handler)
     try:
         options_cli = parse_cli()
-        logger.add(sys.stderr, level=options_cli.level)
-
+        if options_cli.level == "INFO":
+            info_format = "<level>{message}</level>"
+            configure_logging(level="INFO", format=info_format)
+        else:
+            configure_logging(level=options_cli.level)
         arguments = {}
         if options_cli.densify_polygon:
             arguments["max_step_km"] = options_cli.densify_polygon
@@ -180,7 +182,9 @@ def run():
         geometry_valid_simplified = footprint.to_wgs84_plate_carre(
             geometry_valid, **arguments
         )
-        print(geometry_valid_simplified)
+        logger.info(
+            f"\nThe optimized geometry for CAR projection and compatible with GeoJson standard is : \n{geometry_valid_simplified.wkt}"
+        )
         nb_points = compute_nbpoints(geometry_valid)
         nb_points_geom_simplified = compute_nbpoints(geometry_valid_simplified)
 

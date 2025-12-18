@@ -16,8 +16,6 @@ AntimeridianLineSplitter
 AntimeridianSplitter
     Detects and splits geometries crossing the antimeridian.
 """
-from typing import Union
-
 from loguru import logger
 from shapely.geometry import LineString
 from shapely.geometry import MultiPoint
@@ -30,6 +28,7 @@ from shapely.ops import unary_union
 
 from .angle_operation import normalize_lon_to_180
 from .angle_operation import normalize_lon_to_360
+from .monitoring import UtilsMonitoring
 from .pole import Pole
 from .pole import PoleFactory
 
@@ -62,6 +61,7 @@ class EquatorSplitter:
         """
         self.geometry = geometry
 
+    @UtilsMonitoring.time_spend(level="DEBUG")
     def make_valid_geojson_geometry(self) -> Polygon | MultiPolygon:
         """
         Split the polygon along the equator and handle each resulting piece.
@@ -208,6 +208,7 @@ class AntimeridianSplitter:
     # Main splitter logic
     # -------------------------------------------------------------------------
 
+    @UtilsMonitoring.time_spend(level="DEBUG")
     def make_valid_geojson_geometry(self) -> Polygon | MultiPolygon:
         """
         Split the polygon along the antimeridian and normalize longitudes.
@@ -217,7 +218,7 @@ class AntimeridianSplitter:
         Polygon or MultiPolygon
         """
         if not self.crosses_antimeridian(self.geometry):
-            logger.info("Geometry does not cross the antimeridian. No split needed.")
+            logger.debug("Geometry does not cross the antimeridian. No split needed.")
             return self.geometry
 
         logger.info("Geometry crosses the antimeridian. Splitting...")

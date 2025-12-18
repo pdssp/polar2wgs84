@@ -4,6 +4,7 @@ from polar2wgs84.densify_geometry import _densify_segment_km
 from polar2wgs84.densify_geometry import _lonlat_to_unit
 from polar2wgs84.densify_geometry import _unit_to_lonlat
 from polar2wgs84.densify_geometry import DensifyGeometryGeodesic
+from polar2wgs84.exception import InvalidGeometryError
 from shapely.geometry import Polygon
 
 
@@ -61,7 +62,7 @@ def test_init_accepts_polygon(simple_square_polygon):
 
 
 def test_init_rejects_non_polygon():
-    with pytest.raises(TypeError):
+    with pytest.raises(InvalidGeometryError):
         DensifyGeometryGeodesic("not a polygon")
 
 

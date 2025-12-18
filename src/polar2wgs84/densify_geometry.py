@@ -35,6 +35,9 @@ import numpy as np
 from loguru import logger
 from shapely.geometry import Polygon
 
+from .exception import InvalidGeometryError
+from .monitoring import UtilsMonitoring
+
 
 @numba.jit(cache=True)
 def _lonlat_to_unit(lon: float, lat: float) -> np.ndarray:
@@ -200,11 +203,25 @@ class DensifyGeometryGeodesic:
         ----------
         geometry : shapely.geometry.Polygon
             The polygon to densify.
+
+        Raises
+        ------
+        InvalidGeometryError
+            If `geometry` is not a Polygon.
         """
+        logger.debug("Initializing DensifyGeometryGeodesic with input geometry...")
+
         if not isinstance(geometry, Polygon):
-            raise TypeError("geometry must be a shapely Polygon")
+            logger.error(
+                f"Invalid geometry type: {type(geometry).__name__}. "
+                f"Expected a Shapely Polygon."
+            )
+            raise InvalidGeometryError(geometry)
+
         self.geometry = geometry
-        logger.debug("Initialized DensifyGeometryGeodesic with polygon: {}", geometry)
+        logger.debug(
+            f"Successfully initialized DensifyGeometryGeodesic with polygon: {geometry.wkt}"
+        )
 
     def _densify_ring_km(
         self,
@@ -236,6 +253,7 @@ class DensifyGeometryGeodesic:
 
         # Ensure ring closure
         if coords[0] != coords[-1]:
+            logger.debug("Closing ring by duplicating first coordinate.")
             coords.append(coords[0])
 
         new_coords = []
@@ -247,10 +265,17 @@ class DensifyGeometryGeodesic:
             # Drop last point to avoid duplicates between segments
             new_coords.extend(segment[:-1])
 
-        # Explicitly close the ring
-        new_coords.append(new_coords[0])  # Close ring
+        if new_coords:  # Check the new_coords is not empty
+            new_coords.append(new_coords[0])
+            logger.debug(f"Closed densified ring with {len(new_coords)} coordinates.")
+        else:
+            logger.warning(
+                "Densified ring is empty. Check input coordinates and parameters."
+            )
+
         return new_coords
 
+    @UtilsMonitoring.time_spend(level="DEBUG")
     def densify_polygon_km(
         self, max_step_km: float = 5.0, radius_planet: float = R_EARTH_KM
     ) -> Polygon:
@@ -271,7 +296,7 @@ class DensifyGeometryGeodesic:
         shapely.geometry.Polygon
             Densified polygon.
         """
-        logger.info(
+        logger.debug(
             f"""
                 Running _densify_segment_km with the following parameter:
                     - max_step_km = {max_step_km}
@@ -292,7 +317,7 @@ class DensifyGeometryGeodesic:
             )
 
         densified_poly = Polygon(exterior_coords, interiors)
-        logger.info(
+        logger.debug(
             "Densified polygon: {} points exterior, {} holes",
             len(exterior_coords),
             len(interiors),
@@ -300,6 +325,7 @@ class DensifyGeometryGeodesic:
         return densified_poly
 
     @staticmethod
+    @UtilsMonitoring.time_spend(level="DEBUG")
     def limit_polygon_vertices(
         polygon: Polygon,
         max_points: int = 20,
@@ -331,7 +357,7 @@ class DensifyGeometryGeodesic:
         shapely.geometry.Polygon
         Simplified polygon (topology preserved).
         """
-        logger.info(
+        logger.debug(
             f"""
         Running limit_polygon_vertices with the following parameter:
                     - max_points = {max_points}
@@ -361,7 +387,7 @@ class DensifyGeometryGeodesic:
             )
             tolerance *= tolerance_factor
 
-        logger.info(
+        logger.debug(
             "Final simplification: tolerance {:.3f}, points {}",
             tolerance,
             num_points(simplified),

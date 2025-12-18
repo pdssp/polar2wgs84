@@ -27,6 +27,7 @@ from shapely.geometry.polygon import orient
 
 from .angle_operation import normalize_lon_to_360
 from .angle_operation import reorganize_longitudes
+from .monitoring import UtilsMonitoring
 from .projection import Projection
 
 
@@ -70,7 +71,7 @@ class Pole:
 
         # Check if the pole is included
         self.is_pole_included = self._is_pole_included(geometry_polar)
-        logger.info("Pole is contained in the geometry: {}", self.is_pole_included)
+        logger.debug("Pole is contained in the geometry: {}", self.is_pole_included)
 
     def _is_pole_included(self, geom: Polygon, tol: float = 1e-6) -> bool:
         """
@@ -119,6 +120,7 @@ class Pole:
             i += 1
         return LineString(coords)
 
+    @UtilsMonitoring.time_spend(level="DEBUG")
     def make_valid_geojson_geometry(self) -> Polygon:
         """
         Produce a GeoJSON-ready polygon, adjusting for antimeridian and pole inclusion.

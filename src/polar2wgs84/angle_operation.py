@@ -14,9 +14,6 @@ Functions included:
 - normalize_lon_to_360: Shift geometry longitudes from [-180, 180] to [0, 360].
 - normalize_lon_to_180: Convert geometry longitudes from [0, 360] back to [-180, 180].
 """
-from typing import Tuple
-from typing import Union
-
 from shapely.geometry import LineString
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon

@@ -27,13 +27,13 @@ installation
 guide](http://docs.python-guide.org/en/latest/starting/installation/)
 can guide you through the process.
 
-## Installing Poetry
+## Installing UV
 
 To manage the dependencies of Polar to WGS84 Converter, we use
-\[Poetry\](<https://python-poetry.org/>). If you don\'t have Poetry
+\[UV\](<https://docs.astral.sh/uv/>). If you don\'t have UV
 installed, follow these steps:
 
-1.  **Install Poetry**:
+1.  **Install UV**:
 
     > ``` shell
     > $ curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -42,10 +42,10 @@ installed, follow these steps:
 2.  **Verify the installation**:
 
     > ``` console
-    > $ poetry --version
+    > $ uv --version
     > ```
 
-Please note that this project has been tested with Poetry version 2.0.1.
+Please note that this project has been tested with UV version 0.9.15.
 
 ## From sources
 
@@ -91,15 +91,44 @@ $ make help
 
 To use Polar to WGS84 Converter in a project:
 
-``` shell
-import polar2wgs84
+``` python
+from polar2wgs84 import Footprint
+from shapely import Polygon
+
+# Define the vertices of your spherical polygon as a list of (longitude, latitude) tuples.
+# Example: A polygon with 4 vertices (e.g., a rectangle near the North Pole).
+polygon_vertices = [
+    (longitude_1, latitude_1),  # First vertex
+    (longitude_2, latitude_2),  # Second vertex
+    (longitude_3, latitude_3),  # Third vertex
+    (longitude_4, latitude_4),  # Fourth vertex
+    (longitude_1, latitude_1),  # Close the polygon by repeating the first vertex
+]
+
+# Create a Shapely Polygon from the vertices
+polygon = Polygon(polygon_vertices)
+
+# Instantiate the Footprint class with the polygon
+footprint = Footprint(polygon)
+
+# Convert the polygon to a valid GeoJSON-compatible geometry.
+# This ensures the geometry is either a Polygon or MultiPolygon,
+# which are the only types supported by the GeoJSON standard.
+valid_geom = footprint.make_valid_geojson_geometry()
+
+# Interpolate the geometry to the Plate Carrée (CAR) projection (EPSG:4326)
+# and simplify it to reduce complexity while preserving its shape.
+# This is useful for visualization and further processing.
+simplified_valid_geom = footprint.to_wgs84_plate_carre(valid_geom)
+# Additional arguments can be provided to control polygon densification and geometry simplification.
 ```
 
-If the Docker image has been created, use the Docker image with the
-following command line.
+With command line:
 
-``` console
-$ docker run -u $(id -u):$(id -g) -v $(pwd):/app --rm --name polar2wgs84 pdssp/polar2wgs84
+``` shell
+
+$ polar2wgs84 -h
+
 ```
 
 ## Run tests

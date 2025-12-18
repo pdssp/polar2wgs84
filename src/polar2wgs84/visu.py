@@ -6,12 +6,12 @@
 Utility class to visualize Shapely Polygon and MultiPolygon geometries
 using Matplotlib and Cartopy. Supports line and point plotting modes.
 """
-from typing import Union
-
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
+
+from .exception import UnsupportedGeometryTypeError
 
 
 class GeometryVisualizer:
@@ -55,7 +55,7 @@ class GeometryVisualizer:
 
         Raises
         ------
-        TypeError
+        UnsupportedGeometryTypeError
             If `geom` is not a Polygon or MultiPolygon.
         """
         ax.set_title(title)
@@ -97,7 +97,7 @@ class GeometryVisualizer:
                 for interior in p.interiors:
                     coords += list(interior.coords)
         else:
-            raise TypeError(f"Geometry {type(geom)} is not supported")
+            raise UnsupportedGeometryTypeError(type(geom))
 
         # Plot vertices as points
         if coords:

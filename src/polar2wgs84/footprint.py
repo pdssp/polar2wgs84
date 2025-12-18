@@ -7,8 +7,7 @@ Module to handle polygons representing satellite footprints or geographic region
 Provides utilities to ensure valid GeoJSON polygons, densify geometries along geodesic paths,
 handle polar regions, equator and antimeridian crossings, and project polygons to Plate Carrée.
 """
-from typing import Union
-
+from loguru import logger
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
 from shapely.ops import orient
@@ -16,6 +15,8 @@ from shapely.validation import explain_validity
 
 from .angle_operation import normalize_lon_to_180
 from .densify_geometry import DensifyGeometryGeodesic
+from .exception import InvalidGeometryError
+from .monitoring import UtilsMonitoring
 from .pole import Pole
 from .pole import PoleFactory
 from .projection import Projection
@@ -38,7 +39,18 @@ class Footprint:
         ----------
         geometry : Polygon
             Shapely Polygon representing the footprint in WGS84 coordinates.
+
+        Raises
+        ------
+        InvalidGeometryError
+            If `geometry` is not a Polygon.
         """
+        if not isinstance(geometry, Polygon):
+            raise InvalidGeometryError(geometry)
+
+        exterior_coords = geometry.exterior.xy
+        logger.info(f"Create a footprint of {len(exterior_coords[0])} points")
+
         # Ensure polygon is oriented CCW and longitudes are normalized to [-180, 180]
         self.geometry = orient(normalize_lon_to_180(geometry))
         self.stats = self._compute_stats_location()
@@ -74,6 +86,24 @@ class Footprint:
             high_latitude_neg=high_latitude_neg,
         )
 
+    def _compute_nb_points(self, geometry: Polygon | MultiPolygon) -> int:
+        """Compute the number of points for a geometry
+
+        Args:
+            geometry (Polygon | MultiPolygon): geometry
+
+        Returns:
+            int: nb points in the geometry
+        """
+        nb_points: int = 0
+        if isinstance(geometry, Polygon):
+            nb_points += len(geometry.exterior.xy[0])
+        else:
+            for geom in geometry.geoms:
+                nb_points += len(geom.exterior.xy[0])
+        return nb_points
+
+    @UtilsMonitoring.time_spend(level="INFO")
     def make_valid_geojson_geometry(self) -> Polygon | MultiPolygon:
         """
         Generate a GeoJSON-valid geometry by resolving global-geography edge cases.
@@ -99,6 +129,8 @@ class Footprint:
         The algorithm selects the appropriate correction strategy based on the
         latitude distribution of the geometry.
         """
+        logger.debug("Start make_valid_geojson_geometry")
+        valid_geometry: Polygon | MultiPolygon
         if self.stats.only_positive_lat or self.stats.only_negative_lat:
             # Polygon is entirely north or south → may contain pole
             pole: Pole = PoleFactory.create(self.geometry)
@@ -107,12 +139,17 @@ class Footprint:
             else:
                 antimeridian = AntimeridianSplitter(self.geometry)
                 valid_geometry = antimeridian.make_valid_geojson_geometry()
-            return valid_geometry
         else:
             # Polygon crosses equator → use equator splitter
             equator_splitter = EquatorSplitter(self.geometry)
-            return equator_splitter.make_valid_geojson_geometry()
+            valid_geometry = equator_splitter.make_valid_geojson_geometry()
+        final_geom_nb_points = self._compute_nb_points(valid_geometry)
+        logger.info(
+            f"Generate a footprint with {final_geom_nb_points} (compatible with GeoJSON format)"
+        )
+        return valid_geometry
 
+    @UtilsMonitoring.time_spend(level="INFO")
     def to_wgs84_plate_carre(
         self, geometry: Polygon | MultiPolygon, **kwargs
     ) -> Polygon | MultiPolygon:
@@ -165,6 +202,7 @@ class Footprint:
             Geometry simplified in a geodesically consistent manner
             and returned in WGS84 coordinates.
         """
+        logger.debug("Start to_wgs84_plate_carre")
         expected_params_densify = {"max_step_km", "radius_planet"}
         filtered_kwargs_densify = {
             k: v for k, v in kwargs.items() if k in expected_params_densify
@@ -208,7 +246,10 @@ class Footprint:
                 )
                 geoms.append(geom_simplified)
             wgs84_simplified = MultiPolygon(geoms)
-
+        final_geom_nb_points = self._compute_nb_points(wgs84_simplified)
+        logger.info(
+            f"Generate a footprint with {final_geom_nb_points} (compatible with GeoJSON format and CAR projection)"
+        )
         return wgs84_simplified
 
 

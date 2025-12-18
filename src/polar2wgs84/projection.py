@@ -15,8 +15,6 @@ Stats
     Data class summarizing polygon latitude statistics.
 """
 from dataclasses import dataclass
-from typing import Tuple
-from typing import Union
 
 import numpy as np
 from loguru import logger
@@ -27,6 +25,8 @@ from shapely.geometry import Polygon
 from shapely.ops import transform
 
 from .angle_operation import normalize_lon_to_360
+from .exception import UnsupportedGeometryTypeError
+from .monitoring import UtilsMonitoring
 
 
 class Projection:
@@ -137,6 +137,7 @@ class Projection:
         )
         return projected_geom
 
+    @UtilsMonitoring.time_spend(level="DEBUG")
     def project_to_plate_carree(
         self, geom: Polygon | MultiPolygon, reverse: bool = False
     ) -> Polygon | MultiPolygon:
@@ -238,7 +239,7 @@ def compute_centroid(geometry: Polygon | MultiPolygon) -> tuple[float, float]:
             lons.extend(lons_poly)
             lats.extend(lats_poly)
     else:
-        raise TypeError("Input must be a Polygon or MultiPolygon")
+        raise UnsupportedGeometryTypeError(type(geometry))
 
     # Compute mean longitude and latitude
     lon_mean = np.mean(lons[:-1])
