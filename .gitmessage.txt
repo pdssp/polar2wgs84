@@ -1,0 +1,31 @@
+# Template for git commit message
+# Different types:
+# - feat: Adding a new feature.
+# - fix: Fixing a bug.
+# - docs: Documentation changes.
+# - style: Style changes (formatting, missing semicolons, etc.).
+# - refactor: Code refactoring (no new feature or bug fix).
+# - test: Adding or modifying tests.
+# - chore: Configuration changes or maintenance tasks.
+# - perf: Performance improvements
+# - ci: CI/CD related changes
+
+<type>(<scope>): <short summary>
+
+# Why is this change needed?
+# - What problem does it solve?
+# - What feature does it add or improve?
+
+# What was changed?
+# - Key technical changes
+# - Important implementation details
+
+# How was it tested?
+# - Tests added or updated
+# - Manual testing steps
+# - Not tested (explain why)
+
+# Notes:
+# - Breaking changes
+# - Follow-up work
+# - Related issues or PRs (e.g. #123)

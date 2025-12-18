@@ -18,14 +18,6 @@ exclude = '''
 )/
 '''
 
-[tool.towncrier]
-package = "polar2wgs84"
-filename = "docs/history.md"
-directory = "changelog.d"
-title_format = "{version} ({project_date})"
-issue_format = "[#{issue}](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/-/issues/{issue})"
-
-
 [project]
 name = "polar2wgs84"
 readme = "README.md"
