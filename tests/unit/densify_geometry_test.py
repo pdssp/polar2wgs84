@@ -71,13 +71,25 @@ def test_init_rejects_non_polygon():
 # -----------------------------------------------------------------------------
 
 
-def test_lonlat_to_unit_and_back_roundtrip(simple_square_polygon):
+@pytest.mark.parametrize(
+    "lon, lat",
+    [
+        # Equator
+        (0.0, 0.0),
+        (90.0, 0.0),
+        (180.0, 0.0),
+        (-90.0, 0.0),
+        # Pole
+        (0.0, 90.0),
+        (0.0, -90.0),
+    ],
+)
+def test_lonlat_to_unit_and_back_roundtrip(lon, lat):
     lon, lat = 12.3, -45.6
     u = _lonlat_to_unit(lon, lat)
     ll = _unit_to_lonlat(u)
     lon2 = ll[0]
     lat2 = ll[1]
-
     assert np.isclose(lon, lon2, atol=1e-6)
     assert np.isclose(lat, lat2, atol=1e-6)
 
