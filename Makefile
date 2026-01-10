@@ -131,11 +131,12 @@ prepare-dev:
 install-dev:
 	@if [ -n "$$CNES_CERTIFICATE" ]; then \
 		echo "Using SSL certificate: $$CNES_CERTIFICATE"; \
-		SSL_CERT_FILE="$$CNES_CERTIFICATE"; \
-		export SSL_CERT_FILE; \
+		export SSL_CERT_FILE="$$CNES_CERTIFICATE"; \
+		export GIT_SSL_CAINFO="$$CNES_CERTIFICATE"; \
 	else \
 		echo "No CNES certificate set"; \
 	fi
+
 	@if [ -n "$$CNES_CERTIFICATE" ]; then \
 		echo "Using custom index URL: ${UV_INDEX_URL}"; \
 		uv sync --all-groups --index-url "${UV_INDEX_URL}"; \
