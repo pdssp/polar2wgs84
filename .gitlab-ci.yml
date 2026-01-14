@@ -219,8 +219,11 @@ sync_to_github:
     - git config --global user.email "jean-christophe.malapert@cnes.fr"
     - git config --global user.name "Jean-Christophe Malapert"
     - git config --global http.sslCAInfo "${CNES_CERTIFICATE}"
-    - git remote add github https://${GITHUB_TOKEN}@github.com/pdssp/polar2wgs84
+    - git remote add github https://${GITHUB_TOKEN}@github.com/pdssp/polar2wgs84.git
     - git fetch github
-    - git push --force-with-lease "HEAD:refs/heads/main"
+    - git checkout main  # Basculer explicitement sur la branche main
+    - git branch --set-upstream-to=github/main  # Associer la branche locale à la branche distante
+    - git pull github main  # S'assurer que la branche locale est à jour
+    - git push --force-with-lease github main  # Pousser les modifications vers main
   only:
     - main  # Exécute uniquement pour les modifications sur la branche "main"
