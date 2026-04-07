@@ -10,14 +10,13 @@ import sys
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
-from loguru import logger
 from polar2wgs84 import __author__
 from polar2wgs84 import __copyright__
 from polar2wgs84 import __description__
 from polar2wgs84 import __version__
-from polar2wgs84.config import configure_logging
 from polar2wgs84.densify_geometry import DensifyGeometryGeodesic
 from polar2wgs84.footprint import Footprint
+from polar2wgs84.logging_config import setup_logging
 from polar2wgs84.projection import compute_centroid
 from polar2wgs84.projection import compute_nbpoints
 from polar2wgs84.visu import GeometryVisualizer
@@ -50,6 +49,9 @@ class SigintHandler:  # pylint: disable=too-few-public-methods
             frame: the current stack frame
         """
         # pylint: disable=unused-argument
+        from .logging_config import get_logger
+
+        logger = get_logger(__name__)
         logger.error("You pressed Ctrl+C")
         self.SIGINT = True
         sys.exit(2)
@@ -155,11 +157,10 @@ def run():
     signal.signal(signal.SIGINT, handler.signal_handler)
     try:
         options_cli = parse_cli()
-        if options_cli.level == "INFO":
-            info_format = "<level>{message}</level>"
-            configure_logging(level="INFO", format=info_format)
-        else:
-            configure_logging(level=options_cli.level)
+        setup_logging(log_level=options_cli.level)
+        from .logging_config import get_logger
+
+        logger = get_logger("__name__")
         arguments = {}
         if options_cli.densify_polygon:
             arguments["max_step_km"] = options_cli.densify_polygon

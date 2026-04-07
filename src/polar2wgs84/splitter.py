@@ -16,7 +16,6 @@ AntimeridianLineSplitter
 AntimeridianSplitter
     Detects and splits geometries crossing the antimeridian.
 """
-from loguru import logger
 from shapely.geometry import LineString
 from shapely.geometry import MultiPoint
 from shapely.geometry import MultiPolygon
@@ -28,9 +27,12 @@ from shapely.ops import unary_union
 
 from .angle_operation import normalize_lon_to_180
 from .angle_operation import normalize_lon_to_360
+from .logging_config import get_logger
 from .monitoring import UtilsMonitoring
 from .pole import Pole
 from .pole import PoleFactory
+
+logger = get_logger(__name__)
 
 
 class EquatorSplitter:

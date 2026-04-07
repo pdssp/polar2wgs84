@@ -7,7 +7,6 @@ Module to handle polygons representing satellite footprints or geographic region
 Provides utilities to ensure valid GeoJSON polygons, densify geometries along geodesic paths,
 handle polar regions, equator and antimeridian crossings, and project polygons to Plate Carrée.
 """
-from loguru import logger
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
 from shapely.ops import orient
@@ -16,6 +15,7 @@ from shapely.validation import explain_validity
 from .angle_operation import normalize_lon_to_180
 from .densify_geometry import DensifyGeometryGeodesic
 from .exception import InvalidGeometryError
+from .logging_config import get_logger
 from .monitoring import UtilsMonitoring
 from .pole import Pole
 from .pole import PoleFactory
@@ -23,6 +23,8 @@ from .projection import Projection
 from .projection import Stats
 from .splitter import AntimeridianSplitter
 from .splitter import EquatorSplitter
+
+logger = get_logger(__name__)
 
 
 class Footprint:

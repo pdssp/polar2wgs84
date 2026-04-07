@@ -19,7 +19,6 @@ PoleFactory
     Factory class to instantiate the correct pole class based on polygon location.
 """
 import numpy as np
-from loguru import logger
 from shapely.geometry import LineString
 from shapely.geometry import Point
 from shapely.geometry import Polygon
@@ -27,8 +26,11 @@ from shapely.geometry.polygon import orient
 
 from .angle_operation import normalize_lon_to_360
 from .angle_operation import reorganize_longitudes
+from .logging_config import get_logger
 from .monitoring import UtilsMonitoring
 from .projection import Projection
+
+logger = get_logger(__name__)
 
 
 class Pole:

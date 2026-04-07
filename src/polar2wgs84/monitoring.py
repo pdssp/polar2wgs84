@@ -8,7 +8,9 @@ import tracemalloc
 from functools import partial
 from functools import wraps
 
-from loguru import logger
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class UtilsMonitoring:  # noqa: R0205

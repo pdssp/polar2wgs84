@@ -74,7 +74,7 @@ def mock_dependencies(cli_args, valid_polygon):
     """
     with (
         patch("polar2wgs84.__main__.parse_cli", return_value=cli_args),
-        patch("polar2wgs84.__main__.configure_logging"),
+        # patch("polar2wgs84.__main__.configure_logging"),
         patch("polar2wgs84.__main__.SigintHandler"),
         patch(
             "polar2wgs84.__main__.ast.literal_eval",

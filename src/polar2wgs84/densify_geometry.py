@@ -32,11 +32,13 @@ DensifyGeometryGeodesic
 """
 import numba
 import numpy as np
-from loguru import logger
 from shapely.geometry import Polygon
 
 from .exception import InvalidGeometryError
+from .logging_config import get_logger
 from .monitoring import UtilsMonitoring
+
+logger = get_logger(__name__)
 
 
 @numba.jit(cache=True)

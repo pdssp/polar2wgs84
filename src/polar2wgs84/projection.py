@@ -17,7 +17,6 @@ Stats
 from dataclasses import dataclass
 
 import numpy as np
-from loguru import logger
 from pyproj import CRS
 from pyproj import Transformer
 from shapely.geometry import MultiPolygon
@@ -26,7 +25,10 @@ from shapely.ops import transform
 
 from .angle_operation import normalize_lon_to_360
 from .exception import UnsupportedGeometryTypeError
+from .logging_config import get_logger
 from .monitoring import UtilsMonitoring
+
+logger = get_logger(__name__)
 
 
 class Projection:
