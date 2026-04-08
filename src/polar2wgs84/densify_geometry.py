@@ -253,21 +253,37 @@ class DensifyGeometryGeodesic:
         """
         coords = list(coords)
 
-        # Ensure ring closure
         if coords[0] != coords[-1]:
             logger.debug("Closing ring by duplicating first coordinate.")
             coords.append(coords[0])
 
         new_coords = []
         for (lon0, lat0), (lon1, lat1) in zip(coords[:-1], coords[1:]):
-            segment = _densify_segment_km(
-                lon0, lat0, lon1, lat1, max_step_km, radius_planet
-            )
+            # Cas dégénéré : segment le long d'un pôle (lat = ±90)
+            # Les deux points sont au même point géographique (pôle),
+            # SLERP retourne un seul point et le bord disparaît.
+            # On garde juste les deux extrémités — Douglas-Peucker
+            # supprimera les points colinéaires de toute façon.
+            if abs(lat0) >= 90 - 1e-10 and abs(lat1) >= 90 - 1e-10:
+                logger.debug(
+                    "Degenerate polar segment ({}, {}) -> ({}, {}): using endpoints only.",
+                    lon0,
+                    lat0,
+                    lon1,
+                    lat1,
+                )
+                segment = [(lon0, lat0), (lon1, lat1)]
+            else:
+                segment = list(
+                    _densify_segment_km(
+                        lon0, lat0, lon1, lat1, max_step_km, radius_planet
+                    )
+                )
 
             # Drop last point to avoid duplicates between segments
             new_coords.extend(segment[:-1])
 
-        if new_coords:  # Check the new_coords is not empty
+        if new_coords:
             new_coords.append(new_coords[0])
             logger.debug(f"Closed densified ring with {len(new_coords)} coordinates.")
         else:
@@ -375,8 +391,10 @@ class DensifyGeometryGeodesic:
         while num_points(simplified) > max_points:
             if tolerance > tolerance_max:
                 logger.warning(
-                    "Reached maximum tolerance ({}) before achieving target vertices ({})",
-                    tolerance,
+                    "Reached maximum tolerance ({}) before achieving target vertices ({}/{}). "
+                    "Consider increasing tolerance_max for large polygons.",
+                    tolerance_max,
+                    num_points(simplified),
                     max_points,
                 )
                 break

@@ -133,6 +133,14 @@ class Pole:
             Polygon valid for GeoJSON with coordinates adjusted as necessary.
         """
         if self.is_pole_included:
+            from polar2wgs84.splitter import AntimeridianSplitter
+
+            if not AntimeridianSplitter.crosses_antimeridian(self.geometry):
+                logger.debug(
+                    "Pole included but no antimeridian crossing. "
+                    "Returning geometry as-is."
+                )
+                return orient(self.geometry)
             from polar2wgs84.splitter import AntimeridianLineSplitter
 
             # Normalize polygon longitudes to [0, 360]

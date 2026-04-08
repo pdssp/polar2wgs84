@@ -17,6 +17,7 @@ AntimeridianSplitter
     Detects and splits geometries crossing the antimeridian.
 """
 from shapely.geometry import LineString
+from shapely.geometry import MultiLineString
 from shapely.geometry import MultiPoint
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Point
@@ -27,6 +28,7 @@ from shapely.ops import unary_union
 
 from .angle_operation import normalize_lon_to_180
 from .angle_operation import normalize_lon_to_360
+from .exception import InvalidGeoJSONGeometryError
 from .logging_config import get_logger
 from .monitoring import UtilsMonitoring
 from .pole import Pole
@@ -70,14 +72,63 @@ class EquatorSplitter:
         Polygons containing a pole are delegated to the Pole class.
         Other polygons are handled by AntimeridianSplitter if needed.
 
+        If no piece contains a pole, each piece is handled by AntimeridianSplitter
+        and the results are combined. A unary_union is attempted to merge the pieces
+        into a single polygon if possible.
+
         Returns
         -------
         Polygon or MultiPolygon
             Valid GeoJSON-ready geometry.
         """
+        logger.debug("Splitting polygon along equator...")
         geometry_collection = split(self.geometry, EquatorSplitter.EQUATOR_LINE)
-        geom_validated = []
+        logger.debug("Equator split produced {} parts.", len(geometry_collection.geoms))
 
+        # Check if at least one piece contains a pole
+        any_pole_included = False
+        for geom in geometry_collection.geoms:
+            pole: Pole = PoleFactory.create(geom)
+            if pole.is_pole_included:
+                any_pole_included = True
+                break
+
+        if not any_pole_included:
+            logger.debug(
+                "No pole included in any part after equator split. "
+                "Processing each part with AntimeridianSplitter."
+            )
+            all_polygons = []
+            for geom in geometry_collection.geoms:
+                antimeridian = AntimeridianSplitter(geom)
+                valid_geom = antimeridian.make_valid_geojson_geometry()
+                if valid_geom.geom_type == "Polygon":
+                    all_polygons.append(valid_geom)
+                elif valid_geom.geom_type == "MultiPolygon":
+                    all_polygons.extend(list(valid_geom.geoms))
+
+            if len(all_polygons) == 1:
+                return all_polygons[0]
+
+            result = unary_union(MultiPolygon(all_polygons))
+            if isinstance(result, Polygon) and result.is_valid and not result.is_empty:
+                logger.debug("unary_union merged pole parts into a single Polygon.")
+                return result
+            if (
+                isinstance(result, MultiPolygon)
+                and result.is_valid
+                and not result.is_empty
+            ):
+                logger.debug(
+                    "unary_union produced a valid MultiPolygon from pole parts."
+                )
+                return result
+            raise InvalidGeoJSONGeometryError(
+                result.geom_type, f"valid={result.is_valid}, empty={result.is_empty}"
+            )
+
+        # At least one piece contains a pole → process each piece
+        geom_validated = []
         for geom in geometry_collection.geoms:
             pole: Pole = PoleFactory.create(geom)
             if pole.is_pole_included:
@@ -87,7 +138,7 @@ class EquatorSplitter:
                 valid_geom = antimeridian.make_valid_geojson_geometry()
                 geom_validated.append(valid_geom)
 
-        # Flatten and unify all geometries
+        # Flatten
         all_polygons = []
         for geom in geom_validated:
             if geom.geom_type == "Polygon":
@@ -95,8 +146,20 @@ class EquatorSplitter:
             elif geom.geom_type == "MultiPolygon":
                 all_polygons.extend(list(geom.geoms))
 
-        final_multipolygon = MultiPolygon(all_polygons)
-        return unary_union(final_multipolygon)
+        if len(all_polygons) == 1:
+            return all_polygons[0]
+
+        result = unary_union(MultiPolygon(all_polygons))
+        if isinstance(result, Polygon) and result.is_valid and not result.is_empty:
+            logger.debug("unary_union produced a valid Polygon.")
+            return result
+        if isinstance(result, MultiPolygon) and result.is_valid and not result.is_empty:
+            logger.debug("unary_union produced a valid MultiPolygon.")
+            return result
+
+        raise InvalidGeoJSONGeometryError(
+            result.geom_type, f"valid={result.is_valid}, empty={result.is_empty}"
+        )
 
 
 class AntimeridianLineSplitter:
@@ -128,14 +191,22 @@ class AntimeridianLineSplitter:
         If multiple points exist (MultiPoint), the second point is returned
         as convention.
         """
-        result: Point | MultiPoint = self.line.intersection(
-            AntimeridianSplitter.ANTI_MERIDIAN_LINE
+        result: Point | MultiPoint | LineString | MultiLineString = (
+            self.line.intersection(AntimeridianSplitter.ANTI_MERIDIAN_LINE)
         )
         if isinstance(result, Point):
             return result
-        else:
-            # Return the second point if multiple intersections exist
+        elif isinstance(result, MultiPoint):
             return result.geoms[1]
+        elif isinstance(result, MultiLineString):
+            first_line = result.geoms[0]
+            first_point_coords = first_line.coords[1]
+            first_point = Point(first_point_coords)
+            return first_point
+        else:  # LineString
+            first_point_coords = result.coords[1]
+            first_point = Point(first_point_coords)
+            return first_point
 
 
 class AntimeridianSplitter:
@@ -173,7 +244,9 @@ class AntimeridianSplitter:
         """
         Detect if a polygon crosses the antimeridian.
 
-        Returns True if any consecutive vertices differ by more than 180° longitude.
+        Returns True if any consecutive vertices differ by more than 180°
+        longitude but less than 360° (a difference of exactly 360° means
+        both points are on the antimeridian itself, not a true crossing).
 
         Parameters
         ----------
@@ -186,7 +259,10 @@ class AntimeridianSplitter:
         """
         exterior = geometry.exterior.coords
         for (lon1, _), (lon2, _) in zip(exterior, exterior[1:]):
-            if abs(lon2 - lon1) > 180:
+            diff = abs(lon2 - lon1)
+            # True crossing: diff > 180 but not 360
+            # diff = 360 means both points are at ±180 (same meridian, not a crossing)
+            if 180 < diff < 360:
                 logger.debug("Detected antimeridian crossing: {} -> {}", lon1, lon2)
                 return True
         return False

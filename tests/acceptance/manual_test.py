@@ -75,6 +75,10 @@ test_geometries = [
         "poly": "footprint18.json",
     },
     {
+        "name": "Footprint19",
+        "poly": "footprint19.json",
+    },
+    {
         "name": "On Antimeridian",
         "poly": Polygon(
             [

@@ -22,6 +22,18 @@ class InvalidGeometryError(ValueError):
         super().__init__(message)
 
 
+class InvalidGeoJSONGeometryError(ValueError):
+    """Exception raised when a valid GeoJSON geometry cannot be produced."""
+
+    def __init__(self, geometry_type: str, reason: str):
+        message = (
+            f"Failed to produce a valid GeoJSON geometry. "
+            f"Result type: '{geometry_type}'. Reason: {reason}. "
+            f"Check input polygon for self-intersections or invalid topology."
+        )
+        super().__init__(message)
+
+
 class UnsupportedGeometryTypeError(TypeError):
     """Exception raised when the input geometry is not a Polygon or MultiPolygon."""
 

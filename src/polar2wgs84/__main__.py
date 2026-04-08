@@ -167,7 +167,7 @@ def run():
         if options_cli.radius_planet:
             arguments["radius_planet"] = options_cli.radius_planet
         if options_cli.simplify_points:
-            arguments["max_step_km"] = options_cli.simplify_points
+            arguments["max_points"] = options_cli.simplify_points
         if options_cli.simplify_tolerance_start:
             arguments["tolerance_start"] = options_cli.simplify_tolerance_start
         if options_cli.simplify_tolerance_max:
