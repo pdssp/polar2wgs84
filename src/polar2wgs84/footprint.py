@@ -149,7 +149,7 @@ class Footprint:
         logger.info(
             f"Generate a footprint with {final_geom_nb_points} (compatible with GeoJSON format)"
         )
-        return valid_geometry
+        return orient(valid_geometry)
 
     @UtilsMonitoring.time_spend(level="INFO")
     def to_wgs84_plate_carre(
@@ -252,7 +252,7 @@ class Footprint:
         logger.info(
             f"Generate a footprint with {final_geom_nb_points} (compatible with GeoJSON format and CAR projection)"
         )
-        return wgs84_simplified
+        return orient(wgs84_simplified)
 
 
 def check_polygon(poly: Polygon | MultiPolygon, verbose: bool = True) -> dict:
