@@ -149,7 +149,8 @@ class Footprint:
         logger.info(
             f"Generate a footprint with {final_geom_nb_points} (compatible with GeoJSON format)"
         )
-        return orient(valid_geometry)
+        valid_geometry = orient(valid_geometry)
+        return valid_geometry.simplify(0)  # removes consecutive duplicates
 
     @UtilsMonitoring.time_spend(level="INFO")
     def to_wgs84_plate_carre(
@@ -252,7 +253,8 @@ class Footprint:
         logger.info(
             f"Generate a footprint with {final_geom_nb_points} (compatible with GeoJSON format and CAR projection)"
         )
-        return orient(wgs84_simplified)
+        wgs84_simplified = orient(wgs84_simplified)  # CCW
+        return wgs84_simplified.simplify(0)  # removes consecutive duplicates
 
 
 def check_polygon(poly: Polygon | MultiPolygon, verbose: bool = True) -> dict:
