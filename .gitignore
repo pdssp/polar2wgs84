@@ -137,5 +137,3 @@ docs/build/
 docs/generated/
 
 **/tests/msap_data/
-
-uv.lock

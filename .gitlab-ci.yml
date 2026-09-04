@@ -52,7 +52,6 @@ sonarqube:
 
 # because we need git
 .python-base:
-  image: ${UL_ARTIFACTORY_HOST}/pdssp-docker/astral-sh/uv:python3.12-bookworm-slim
   before_script:
     - !reference [.python-scripts]
     - install_ca_certs "${CUSTOM_CA_CERTS:-$DEFAULT_CA_CERTS}"
