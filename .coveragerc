@@ -1,3 +1,9 @@
 [run]
+source = polar2wgs84
 omit =
     tests/*
+
+[paths]
+source =
+    src/polar2wgs84
+    */site-packages/polar2wgs84
