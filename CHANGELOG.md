@@ -1,3 +1,10 @@
+## [1.0.1](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.0...v1.0.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency matplotlib to v3.11.1 ([a6fb70b](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/a6fb70b85934870f0b30fe7de8b116152fdbab5e))
+
 # 1.0.0 (2026-09-04)
 
 
