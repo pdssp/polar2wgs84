@@ -1,13 +1,13 @@
 include:
+
   - component: $CI_SERVER_FQDN/to-be-continuous/python/gitlab-ci-python@9.6.1
-  - component: $CI_SERVER_FQDN/usinelogicielle/public/gitlab-ci-components/sonarqube-component/sonarqube@1.3.2
     inputs:
       dep-groups: "dev"
       pytest-enabled: true
       bandit-enabled: true
       bandit-args: "-c pyproject.toml --recursive ."
 
-  - component: $CI_SERVER_FQDN/to-be-continuous/semantic-release/gitlab-ci-semrel@4.2.1
+  - component: $CI_SERVER_FQDN/to-be-continuous/semantic-release/gitlab-ci-semrel@4.3.0
     inputs:
       changelog-enabled: true
       auto-release-enabled: true
