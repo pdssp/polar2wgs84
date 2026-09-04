@@ -74,7 +74,6 @@ GeometryVisualizer.draw_geometry(
     edgecolor="blue",
 )
 
-plt.tight_layout()
 plt.show()
 
 # %%
