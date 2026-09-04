@@ -46,6 +46,12 @@ variables:
 
   SONAR_TOKEN: ${PDSSP_SONAR_TOKEN}
 
+  # Exclude tests marked "manual" (visual/matplotlib acceptance checks, not
+  # meant for headless CI). Also works around a coverage.py sys.monitoring
+  # incompatibility with cartopy's compiled Cython code on Python 3.13+
+  # (SystemError: cannot instrument shim code object).
+  PYTEST_ARGS: '-m "not manual"'
+
 sonarqube:
   needs:
     - py-pytest
