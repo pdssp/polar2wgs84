@@ -1,4 +1,5 @@
-import subprocess
+# subprocess: trusted internal tooling, no user input
+import subprocess  # nosec B404
 
 import toml
 
@@ -16,7 +17,8 @@ for package in dev_dependencies:
     package_name = package.split("==")[0].strip()
     packages.append(package_name)
 
-subprocess.run(
+# subprocess.run: fixed argv, no shell, no untrusted input
+subprocess.run(  # nosec B603
     [
         "pip-licenses",
         "--from",
