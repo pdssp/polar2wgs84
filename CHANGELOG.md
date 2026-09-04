@@ -1,3 +1,10 @@
+## [1.0.2](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.1...v1.0.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* **deps:** update dependency numpy to v2.5.2 ([f073b9a](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/f073b9ac763fbf2a31b57c7eb5443d64f345da69))
+
 ## [1.0.1](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.0...v1.0.1) (2026-09-04)
 
 
