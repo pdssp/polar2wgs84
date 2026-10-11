@@ -1,3 +1,13 @@
+## [1.0.3](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.2...v1.0.3) (2026-10-11)
+
+
+### Bug Fixes
+
+* **deps:** update dependency cartopy to v0.26.0 ([c7fa5d2](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/c7fa5d2b3dd6052abf9aab6367b24092c4df3045))
+* **deps:** update dependency matplotlib to v3.11.2 ([837daf3](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/837daf37b9a181035b120aedb10054711d7a700b))
+* **deps:** update dependency numpy to v2.5.3 ([8401bd6](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/8401bd64d1bed18b6ae5ac8aafb865eebb056230))
+* **deps:** update dependency numpy to v2.5.4 ([1914785](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/1914785b4c872446d1bd5a524e0ad6283b1f27fd))
+
 ## [1.0.2](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.1...v1.0.2) (2026-09-04)
 
 
