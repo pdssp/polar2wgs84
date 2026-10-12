@@ -1,3 +1,10 @@
+## [1.0.4](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.3...v1.0.4) (2026-10-12)
+
+
+### Bug Fixes
+
+* **deps:** update dependency numba to v0.68.0 ([61c0d1e](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/61c0d1e3473b9d8b80254ff701ab4742a8181871))
+
 ## [1.0.3](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.2...v1.0.3) (2026-10-11)
 
 
