@@ -50,6 +50,7 @@ Design principles
 - **Standards-aware**: Output geometries conform to GeoJSON winding
   and continuity rules.
 """
+
 from ._version import __author__
 from ._version import __author_email__
 from ._version import __copyright__
@@ -59,6 +60,8 @@ from ._version import __name_soft__
 from ._version import __title__
 from ._version import __url__
 from ._version import __version__
+from .antimeridian import crosses_antimeridian
+from .antimeridian import resolve_antimeridian_rings
 from .footprint import Footprint
 from .logging_config import get_logger
 
@@ -67,4 +70,4 @@ logger = get_logger(__name__)
 info_format = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>"
 logger.info(f"{__name_soft__} V{__version__} imported")
 
-__all__ = ["Footprint"]
+__all__ = ["Footprint", "crosses_antimeridian", "resolve_antimeridian_rings"]

@@ -79,6 +79,10 @@ test_geometries = [
         "poly": "footprint19.json",
     },
     {
+        "name": "MRO CTX J06_046958_0890_XN_89S158W",
+        "poly": "footprint20.json",
+    },
+    {
         "name": "On Antimeridian",
         "poly": Polygon(
             [

@@ -7,12 +7,14 @@ Module to handle polygons representing satellite footprints or geographic region
 Provides utilities to ensure valid GeoJSON polygons, densify geometries along geodesic paths,
 handle polar regions, equator and antimeridian crossings, and project polygons to Plate Carrée.
 """
+
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
 from shapely.ops import orient
 from shapely.validation import explain_validity
 
 from .angle_operation import normalize_lon_to_180
+from .antimeridian import resolve_antimeridian_rings
 from .densify_geometry import DensifyGeometryGeodesic
 from .exception import InvalidGeometryError
 from .logging_config import get_logger
@@ -114,7 +116,15 @@ class Footprint:
         ------------------
         GeoJSON imposes strict rules on polygon validity, especially for geometries
         expressed in longitude/latitude (WGS84). This method enforces those rules by
-        detecting and resolving three major sources of invalidity:
+        detecting and resolving four major sources of invalidity:
+
+        0. **Antimeridian crossing unsplit (edges spanning more than 180°)**
+        Some footprints, often near a pole, have edges that cross ±180° along
+        the shortest path without being split there. They are first rebuilt
+        along the shortest path and split at ±180° (see
+        :func:`polar2wgs84.antimeridian.resolve_antimeridian_rings`), so that
+        the polygon does not cover the wrong side of the globe. A rebuilt
+        geometry is already GeoJSON-safe.
 
         1. **Polar inclusion**
         Polygons that fully enclose the North or South Pole cannot be represented
@@ -133,7 +143,15 @@ class Footprint:
         """
         logger.debug("Start make_valid_geojson_geometry")
         valid_geometry: Polygon | MultiPolygon
-        if self.stats.only_positive_lat or self.stats.only_negative_lat:
+        geometry = resolve_antimeridian_rings(self.geometry)
+        if geometry is not self.geometry:
+            # A ring had an edge crossing ±180° along the shortest path: the
+            # geometry has been rebuilt, split at ±180° and folded back into
+            # [-180, 180]. Such a ring cannot enclose a pole, so the result is
+            # already GeoJSON-safe.
+            logger.debug("Geometry rebuilt across the antimeridian (shortest path).")
+            valid_geometry = geometry
+        elif self.stats.only_positive_lat or self.stats.only_negative_lat:
             # Polygon is entirely north or south → may contain pole
             pole: Pole = PoleFactory.create(self.geometry)
             if pole.is_pole_included:

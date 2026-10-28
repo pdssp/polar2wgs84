@@ -6,12 +6,34 @@
 Utility class to visualize Shapely Polygon and MultiPolygon geometries
 using Matplotlib and Cartopy. Supports line and point plotting modes.
 """
+
 import cartopy.crs as ccrs
+import cartopy.mpl.gridliner
 import matplotlib.pyplot as plt
+import shapely.errors
+from loguru import logger
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
 
 from .exception import UnsupportedGeometryTypeError
+
+# Cartopy 0.26 drops gridlines that the projection fully hides, but not
+# gridlines reduced to a single point (e.g. a meridian tangent to the limb
+# of an Orthographic projection): shapely then raises a GEOSException while
+# drawing the gridline labels. As the labels are cosmetic, catch that
+# failure instead of letting it break the whole figure: cartopy still draws
+# the gridlines, possibly with some missing labels.
+_draw_gridliner = cartopy.mpl.gridliner.Gridliner._draw_gridliner
+
+
+def _safe_draw_gridliner(gridliner, *args, **kwargs):
+    try:
+        _draw_gridliner(gridliner, *args, **kwargs)
+    except shapely.errors.GEOSException as exc:
+        logger.warning(f"Gridline labels partially skipped ({exc})")
+
+
+cartopy.mpl.gridliner.Gridliner._draw_gridliner = _safe_draw_gridliner
 
 
 class GeometryVisualizer:

@@ -18,27 +18,27 @@ repos:
       - id: requirements-txt-fixer
       - id: pretty-format-json
   - repo: https://github.com/asottile/reorder_python_imports
-    rev: v3.17.0
+    rev: v3.19.0
     hooks:
       - id: reorder-python-imports
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.5.1
+    rev: 26.10.1
     hooks:
       - id: black
         language_version: python3
   - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
+    rev: 7.4.1
     hooks:
       - id: flake8
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2   # (or latest release)
+    rev: v3.22.0   # (or latest release)
     hooks:
       - id: pyupgrade
         args: [--py312-plus]
 
   - repo: https://github.com/twisted/towncrier
-    rev: 25.8.0  # Mettre à jour avec la dernière version si nécessaire
+    rev: 26.9.0  # Mettre à jour avec la dernière version si nécessaire
     hooks:
       - id: towncrier-update
         files: changelog\.d/  # Répertoire où sont stockés les fragments de nouvelles
