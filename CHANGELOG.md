@@ -1,3 +1,15 @@
+# [1.1.0](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.4...v1.1.0) (2026-10-28)
+
+
+### Bug Fixes
+
+* **deps:** update brotli, brotlicffi, certifi and pillow to fix Trivy vulnerabilities ([bb5d63d](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/bb5d63d36115de12ab615ac5c2ae1579d8b9e0ea))
+
+
+### Features
+
+* **footprint:** resolve antimeridian crossings by splitting rings along the shortest path ([2b1e2a2](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/2b1e2a2c1fce3a8dcba3d97d763a17e5f82147b0))
+
 ## [1.0.4](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.3...v1.0.4) (2026-10-12)
 
 
