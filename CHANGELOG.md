@@ -1,3 +1,10 @@
+## [1.1.1](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.1.0...v1.1.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **doc:** restore ast.Str compat shim for mkdocs-gallery on Python >= 3.12 ([de2329e](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/de2329e5fc1729b7b53a2c94b7f3b277aec05adb))
+
 # [1.1.0](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.0.4...v1.1.0) (2026-10-28)
 
 
