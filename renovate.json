@@ -12,7 +12,8 @@
       ],
       "matchPackageNames": [
         "https://github.com/psf/black-pre-commit-mirror"
-      ]
+      ],
+      "minimumReleaseAge": "7 days"
     }
   ]
 }
