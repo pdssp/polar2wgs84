@@ -1,3 +1,17 @@
+## [1.1.2](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.1.1...v1.1.2) (2026-11-05)
+
+
+### Bug Fixes
+
+* **deps:** set minimumReleaseAge on the black pre-commit mirror rule ([eb97bf4](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/eb97bf485a6cf8be037a2d5d7962f8a3fba2c58f))
+* **footprint:** repair self-intersecting rings (bow-tie polygons) with shapely.make_valid ([d3200fc](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/d3200fc18f45889520bfc3d18cfc02ae2fff901a))
+* **pre-commit:** restore convergent hooks ([2b1e53a](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/2b1e53a05248e268274c74fec8c12d55c6bd9d15))
+
+
+### Reverts
+
+* **deps:** drop black pin from renovate.json ([686a74e](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/686a74e9a6b9d220ee4ba5235dccdefcf071a0ca))
+
 ## [1.1.1](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.1.0...v1.1.1) (2026-10-28)
 
 
