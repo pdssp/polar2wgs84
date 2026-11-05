@@ -6,7 +6,6 @@
 Utility class to visualize Shapely Polygon and MultiPolygon geometries
 using Matplotlib and Cartopy. Supports line and point plotting modes.
 """
-
 import cartopy.crs as ccrs
 import cartopy.mpl.gridliner
 import matplotlib.pyplot as plt

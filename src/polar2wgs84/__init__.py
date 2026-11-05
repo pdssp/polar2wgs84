@@ -50,7 +50,6 @@ Design principles
 - **Standards-aware**: Output geometries conform to GeoJSON winding
   and continuity rules.
 """
-
 from ._version import __author__
 from ._version import __author_email__
 from ._version import __copyright__

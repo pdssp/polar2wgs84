@@ -21,7 +21,6 @@ the input footprints are expected to be already correct: the reconstruction
 belongs to the GeoJSON-safety pipeline, i.e. here. It is applied first in
 :meth:`polar2wgs84.footprint.Footprint.make_valid_geojson_geometry`.
 """
-
 from __future__ import annotations
 
 from itertools import pairwise

@@ -3,7 +3,6 @@
 # This file is part of Polar to WGS84 Converter <https://gitlab.cnes.fr/pdssp/common/polar2wgs84>
 # SPDX-License-Identifier: Apache-2.0
 """Tests of the rebuild of rings whose edges cross the antimeridian unsplit."""
-
 import pytest
 from loguru import logger
 from polar2wgs84.antimeridian import crosses_antimeridian

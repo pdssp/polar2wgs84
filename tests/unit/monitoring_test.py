@@ -128,7 +128,7 @@ def test_time_spend_logs_function_duration(mock_logger):
 
     # Optionally, you can check for a specific pattern if you want to be more strict
     # For example, checking if the message contains "finished in" and "ms"
-    log_calls = [call for call in mock_logger.log.call_args_list]
+    log_calls = [*mock_logger.log.call_args_list]
     assert any("finished in" in str(call) for call in log_calls)
 
 
@@ -136,7 +136,7 @@ def test_time_spend_logs_function_duration(mock_logger):
 def test_measure_memory_logs_memory_usage(mock_logger):
     @UtilsMonitoring.measure_memory(level="WARNING")
     def test_memory_func():
-        return [i for i in range(10000)]  # Create a list
+        return [*range(10000)]  # Create a list
 
     result = test_memory_func()
     assert len(result) == 10000
