@@ -7,8 +7,12 @@ Module to handle polygons representing satellite footprints or geographic region
 Provides utilities to ensure valid GeoJSON polygons, densify geometries along geodesic paths,
 handle polar regions, equator and antimeridian crossings, and project polygons to Plate Carrée.
 """
+import json
+
+from shapely.geometry import mapping
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
+from shapely.geometry.base import BaseGeometry
 from shapely.ops import orient
 from shapely.ops import unary_union
 from shapely.validation import explain_validity
@@ -198,6 +202,35 @@ class Footprint:
         )
         valid_geometry = orient(valid_geometry)
         return valid_geometry.simplify(0)  # removes consecutive duplicates
+
+    def to_geojson(self, geometry: BaseGeometry | None = None) -> dict:
+        """GeoJSON dict with JSON-native lists.
+
+        ``make_valid_geojson_geometry()`` returns a Shapely geometry on
+        purpose (callers need ``is_valid``/``equals``/``area``...), but
+        Shapely's own ``mapping()`` renders coordinate arrays as TUPLES:
+        correct once ``json.dumps``'ed, yet NOT a JSON-Schema "array" for
+        any in-memory validator or dict consumer (production catch,
+        2026-11-05: a polar antimeridian-crossing footprint, corrected
+        here into a MultiPolygon, failed a STAC core-schema validation on
+        exactly this). This helper owns that Shapely-to-JSON conversion
+        once and for all: a plain ``dict`` whose coordinate arrays are
+        real ``list`` objects.
+
+        Parameters
+        ----------
+        geometry:
+            The Shapely geometry to convert. Default: this footprint's own
+            ``self.geometry``.
+
+        Returns
+        -------
+        dict
+            A GeoJSON mapping (``{"type": ..., "coordinates": ...}``),
+            JSON-native: every coordinate array is a ``list``.
+        """
+        target = self.geometry if geometry is None else geometry
+        return json.loads(json.dumps(mapping(target)))
 
     @UtilsMonitoring.time_spend(level="INFO")
     def to_wgs84_plate_carre(

@@ -43,3 +43,47 @@ def test_valid_geometry_passes_through_unchanged():
     assert geom.is_valid
     assert geom.geom_type == "Polygon"
     assert geom.equals(square)
+
+
+# A footprint crossing the antimeridian gets split by
+# make_valid_geojson_geometry into a MultiPolygon -- the case that
+# motivated to_geojson(): Shapely's mapping() used to leak tuples there.
+CROSSING = Polygon(
+    [
+        (181.476, 85.6931),
+        (181.476, 85.7946),
+        (179.868, 85.7946),
+        (179.868, 85.6931),
+        (181.476, 85.6931),
+    ]
+)
+
+
+def test_to_geojson_returns_json_native_lists():
+    footprint = Footprint(CROSSING)
+    geom_json = footprint.to_geojson(footprint.make_valid_geojson_geometry())
+
+    assert isinstance(geom_json, dict)
+    assert geom_json["type"] == "MultiPolygon"
+
+    def any_tuple(node) -> bool:
+        return isinstance(node, tuple) or (
+            isinstance(node, list) and any(any_tuple(n) for n in node)
+        )
+
+    assert not any_tuple(geom_json["coordinates"])
+
+
+def test_to_geojson_round_trips_through_shapely_shape():
+    from shapely.geometry import shape
+
+    footprint = Footprint(CROSSING)
+    geom = footprint.make_valid_geojson_geometry()
+    assert shape(footprint.to_geojson(geom)).equals(geom)
+
+
+def test_to_geojson_defaults_to_the_footprints_own_geometry():
+    footprint = Footprint(Polygon([(10, 1), (10, 5), (20, 5), (20, 1), (10, 1)]))
+    geom_json = footprint.to_geojson()
+    assert geom_json["type"] == "Polygon"
+    assert geom_json["coordinates"] == [[[10, 1], [20, 1], [20, 5], [10, 5], [10, 1]]]
