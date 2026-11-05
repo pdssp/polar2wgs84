@@ -2,5 +2,17 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "local>pdssp/renovate"
+  ],
+  "packageRules": [
+    {
+      "allowedVersions": "<26",
+      "description": "black >= 26 enforces a blank line after module docstrings, which reorder-python-imports keeps removing: any bump to 26.x makes pre-commit hooks loop on every commit. Keep black below 26 until reorder-python-imports accepts a blank line after the module docstring.",
+      "matchManagers": [
+        "pre-commit"
+      ],
+      "matchPackageNames": [
+        "https://github.com/psf/black-pre-commit-mirror"
+      ]
+    }
   ]
 }
