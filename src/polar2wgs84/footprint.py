@@ -7,15 +7,17 @@ Module to handle polygons representing satellite footprints or geographic region
 Provides utilities to ensure valid GeoJSON polygons, densify geometries along geodesic paths,
 handle polar regions, equator and antimeridian crossings, and project polygons to Plate Carrée.
 """
-
 from shapely.geometry import MultiPolygon
 from shapely.geometry import Polygon
 from shapely.ops import orient
+from shapely.ops import unary_union
 from shapely.validation import explain_validity
+from shapely.validation import make_valid
 
 from .angle_operation import normalize_lon_to_180
 from .antimeridian import resolve_antimeridian_rings
 from .densify_geometry import DensifyGeometryGeodesic
+from .exception import InvalidGeoJSONGeometryError
 from .exception import InvalidGeometryError
 from .logging_config import get_logger
 from .monitoring import UtilsMonitoring
@@ -138,6 +140,11 @@ class Footprint:
         Polygons spanning both hemispheres may require splitting to ensure
         correct orientation and winding rules.
 
+        4. **Self-intersection (bow-tie ring)**
+        Rings that are not repaired by any of the strategies above are fixed
+        with :func:`shapely.validation.make_valid`, which may turn a single
+        invalid polygon into a valid MultiPolygon.
+
         The algorithm selects the appropriate correction strategy based on the
         latitude distribution of the geometry.
         """
@@ -163,6 +170,28 @@ class Footprint:
             # Polygon crosses equator → use equator splitter
             equator_splitter = EquatorSplitter(self.geometry)
             valid_geometry = equator_splitter.make_valid_geojson_geometry()
+
+        if not valid_geometry.is_valid:
+            logger.info(
+                f"Invalid geometry ({explain_validity(valid_geometry)}): "
+                "repairing it with shapely.make_valid"
+            )
+            valid_geometry = make_valid(valid_geometry)
+        if valid_geometry.geom_type == "GeometryCollection":
+            # make_valid can leave lines or points behind: keep only the
+            # polygonal parts and merge them back.
+            parts = [
+                geom
+                for geom in valid_geometry.geoms
+                if isinstance(geom, (Polygon, MultiPolygon))
+            ]
+            if not parts:
+                raise InvalidGeoJSONGeometryError(
+                    valid_geometry.geom_type,
+                    "no polygonal part left after shapely.make_valid",
+                )
+            valid_geometry = unary_union(parts)
+
         final_geom_nb_points = self._compute_nb_points(valid_geometry)
         logger.info(
             f"Generate a footprint with {final_geom_nb_points} (compatible with GeoJSON format)"
