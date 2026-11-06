@@ -175,6 +175,20 @@ class Footprint:
             equator_splitter = EquatorSplitter(self.geometry)
             valid_geometry = equator_splitter.make_valid_geojson_geometry()
 
+        if not isinstance(valid_geometry, (Polygon, MultiPolygon)):
+            # All the correction paths above are contracted to return a
+            # Polygon or a MultiPolygon -- a degenerate input (e.g. a
+            # zero-width polar bbox ring whose four corners share one
+            # longitude, repaired by resolve_antimeridian_rings() into a
+            # LineString, 2026-11-05 production catch:
+            # 'LineString' object has no attribute 'geoms') must fail
+            # EXPLICITLY here, not crash three lines later.
+            raise InvalidGeoJSONGeometryError(
+                valid_geometry.geom_type,
+                "a correction path returned a non-polygonal geometry "
+                "(degenerate input ring?)",
+            )
+
         if not valid_geometry.is_valid:
             logger.info(
                 f"Invalid geometry ({explain_validity(valid_geometry)}): "
@@ -195,6 +209,17 @@ class Footprint:
                     "no polygonal part left after shapely.make_valid",
                 )
             valid_geometry = unary_union(parts)
+        if not isinstance(valid_geometry, (Polygon, MultiPolygon)):
+            # shapely.make_valid() can also return a bare LineString for an
+            # input polygon whose ring is entirely degenerate (2026-11-05
+            # production catch: a zero-width polar bbox, "Too few points in
+            # geometry component" repaired into a 2-point LineString) --
+            # fail EXPLICITLY, never hand a non-polygon to the code below.
+            raise InvalidGeoJSONGeometryError(
+                valid_geometry.geom_type,
+                "no polygonal result left after shapely.make_valid "
+                "(degenerate input ring?)",
+            )
 
         final_geom_nb_points = self._compute_nb_points(valid_geometry)
         logger.info(

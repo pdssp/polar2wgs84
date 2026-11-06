@@ -87,3 +87,19 @@ def test_to_geojson_defaults_to_the_footprints_own_geometry():
     geom_json = footprint.to_geojson()
     assert geom_json["type"] == "Polygon"
     assert geom_json["coordinates"] == [[[10, 1], [20, 1], [20, 5], [10, 5], [10, 1]]]
+
+
+# The degenerate ring that motivated the non-polygonal guard in
+# make_valid_geojson_geometry: all four corners share one longitude
+# (a polar-fill bbox artifact), which resolve_antimeridian_rings()
+# rebuilds into a LineString.
+DEGENERATE = Polygon(
+    [(0.0, 89.3167), (0.0, 89.3167), (0.0, 89.4837), (0.0, 89.4837), (0.0, 89.3167)]
+)
+
+
+def test_degenerate_ring_raises_invalid_geojson_geometry_error():
+    from polar2wgs84.exception import InvalidGeoJSONGeometryError
+
+    with pytest.raises(InvalidGeoJSONGeometryError, match="polygonal"):
+        Footprint(DEGENERATE).make_valid_geojson_geometry()
