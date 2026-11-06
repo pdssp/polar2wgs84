@@ -1,3 +1,15 @@
+# [1.2.0](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.1.2...v1.2.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **footprint:** return JSON-native coordinate lists from new to_geojson() ([066237e](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/066237e65a7beb880849ca0ac9761b408be3a2f2))
+
+
+### Features
+
+* update uv.lock ([4cbc715](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/4cbc71567994dde1d931f2d3e204af43e28a8aeb))
+
 ## [1.1.2](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.1.1...v1.1.2) (2026-11-05)
 
 
