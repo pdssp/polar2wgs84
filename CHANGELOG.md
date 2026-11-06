@@ -1,3 +1,10 @@
+## [1.2.1](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.2.0...v1.2.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **footprint:** return JSON-native GeoJSON dicts via new to_geojson() ([dd3e65c](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/commit/dd3e65c8b7f77b892f1da7a9b4e532d4d822d7e2))
+
 # [1.2.0](https://gitlab.cnes.fr/pdssp/common/polar2wgs84/compare/v1.1.2...v1.2.0) (2026-11-05)
 
 
